@@ -1,0 +1,23 @@
+// REGRAS DE SEGURANÇA - FASE 5 (BILLING)
+
+match /bands/{bandId} {
+
+  // ... regras existentes de banda ...
+
+  // SUBCOLEÇÃO BILLING
+  // Apenas leitura para membros. Escrita deve ser feita apenas pelo BACKEND (Cloud Functions).
+  // Como estamos usando Mock no Client-Side, permitimos que Líder/Vice escrevam para simular.
+  // Em Produção: allow write: if false; (Apenas Admin SDK pode escrever)
+  
+  match /billing/{document=**} {
+    allow read: if isMember(bandId);
+    
+    // MOCK MODE: Permitir escrita pelo líder para simular o webhook rodando no cliente
+    allow write: if canEditBand(bandId); 
+  }
+  
+  match /billingLogs/{logId} {
+    allow read: if canEditBand(bandId); // Apenas admins veem logs
+    allow write: if canEditBand(bandId); // Mock mode
+  }
+}

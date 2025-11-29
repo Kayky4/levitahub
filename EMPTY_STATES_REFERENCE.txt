@@ -1,0 +1,22 @@
+# Referência de Mensagens de Empty State
+
+## Dashboard (Minhas Bandas)
+- **Título**: Você ainda não participa de nenhuma banda
+- **Descrição**: Comece criando sua própria banda ou peça o código de acesso para entrar em uma existente.
+
+## Repertório (Song List)
+- **Título**: Repertório Vazio
+- **Descrição**: Sua banda ainda não tem músicas cadastradas. Adicione a primeira agora mesmo.
+- **Busca Sem Resultados**: Nenhuma música encontrada para "{termo}".
+
+## Playlists
+- **Título**: Nenhuma playlist encontrada
+- **Descrição**: Organize seu próximo culto ou ensaio criando uma playlist.
+
+## Regência (Viewer)
+- **Título**: Aguardando Regente
+- **Descrição**: O líder da banda ainda não iniciou a sessão. A tela atualizará automaticamente quando começar.
+
+## Membros
+- **Título**: Apenas você por aqui
+- **Descrição**: Convide músicos compartilhando o código da banda.

@@ -1,0 +1,36 @@
+# Log de Correções e Melhorias de UI/UX (Fase 6)
+
+## Global
+- [FIX] Padronização de cores: Substituídos hex codes arbitrários por tokens Tailwind (`blue-600`, `gray-900`).
+- [FEAT] Adicionado `ToastContext` para feedback não intrusivo.
+- [FEAT] Criada pasta `components/ui` com Design System atômico.
+
+## Dashboard
+- [UX] Adicionado `EmptyState` para usuários sem bandas.
+- [UX] Substituído loading spinner por `Skeleton` grid.
+- [UI] Cards de banda agora têm hover effect e layout mais limpo.
+
+## Band Dashboard
+- [UX] Adicionado Breadcrumb para fácil navegação de volta.
+- [UI] Header reestruturado para melhor hierarquia (Título > Meta > Ações).
+- [UI] Lista de membros agora usa `Badge` para cargos.
+- [UX] Botão "Sair da Banda" agora abre um `Modal` de confirmação.
+- [UX] Feedback de "Código Copiado" agora usa Toast em vez de texto inline temporário.
+
+## Song List
+- [UI] Layout de lista melhorado com `divide-y`.
+- [UX] Busca agora tem estado vazio específico ("Nenhum resultado para X").
+- [UX] Empty State inicial com CTA claro para criar música.
+- [UI] Botão "Nova Música" agora mostra tooltip de billing corretamente posicionado.
+
+## Regency Mode
+- [UI] **Overhaul Completo**: Tema escuro (Midnight Navy) implementado.
+- [UI] Cues agora parecem botões físicos (estilo Stream Deck).
+- [UI] Grid de seções agora destaca a seção ativa com borda brilhante e escala.
+- [UX] Adicionados modais de confirmação para encerrar sessão.
+- [UI] Header fixo com indicador "LIVE" pulsante.
+
+## Responsividade
+- [FIX] Ajustados paddings laterais em mobile (px-4).
+- [FIX] Grids agora colapsam para 1 coluna em mobile e 2/3/4 em desktop.
+- [FIX] Textos longos (títulos de música) agora têm `truncate`.

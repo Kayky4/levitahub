@@ -1,0 +1,61 @@
+# LevitaHub - Fase 5: Billing Architecture (Mocked)
+
+## 1. Visão Geral
+Esta fase implementa toda a lógica de assinaturas, bloqueios e pagamentos, mas utilizando um "Mock Engine" em vez da API da Stripe. Isso permite validar a experiência do usuário (UX) e as regras de negócio (Bloqueios) sem depender de keys reais ou cartões de crédito neste momento.
+
+## 2. Estrutura de Dados
+
+### Firestore
+Documento de Faturamento:
+Path: `bands/{bandId}/billing/subscription`
+```typescript
+{
+  subscriptionStatus: 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'blocked',
+  stripeCustomerId: string | null,
+  stripeSubscriptionId: string | null,
+  trialEndsAt: number | null, // Timestamp MS
+  currentPeriodEnd: number | null, // Renovação
+  pastDueAt: number | null, // Data da falha de pagamento
+  graceEndsAt: number | null // Fim da tolerância
+}
+```
+
+Logs de Faturamento:
+Path: `bands/{bandId}/billingLogs/{logId}`
+Registra todos os webhooks recebidos e ações do sistema para auditoria.
+
+## 3. Mock Engine (Simulação de Cloud Functions)
+
+### `createCheckoutSessionMock`
+Simula a chamada à Stripe API que cria uma Session.
+- Gera um `sessionId` falso.
+- Retorna uma URL interna: `/mock-checkout?session_id=...`.
+
+### `processMockWebhook`
+Simula o endpoint que a Stripe chamaria (Webhook).
+- Aceita eventos como `checkout.session.completed` e `invoice.payment_failed`.
+- Atualiza o documento `billing` no Firestore de acordo com a lógica de negócio real.
+- Ex: Se recebe `invoice.paid`, muda status para `active`.
+
+### `runReconciliationJobMock`
+Simula um cron job diário.
+- Verifica se o `trialEndsAt` já passou.
+- Verifica se o `graceEndsAt` (para inadimplentes) expirou.
+- Atualiza status (ex: `trialing` -> `active`, `past_due` -> `blocked`).
+
+## 4. Regras de Bloqueio
+
+| Status      | Nova Música | Nova Playlist | Modo Regência |
+|-------------|-------------|---------------|---------------|
+| `active`    | ✅          | ✅            | ✅            |
+| `trialing`  | ✅          | ✅            | ✅            |
+| `past_due`  | ❌ (Bloq)   | ❌ (Bloq)     | ❌ (Bloq)     |
+| `inactive`  | ❌ (Bloq)   | ❌ (Bloq)     | ❌ (Bloq)     |
+| `canceled`  | ❌ (Bloq)   | ❌ (Bloq)     | ❌ (Bloq)     |
+
+## 5. Migração para Produção
+Para ativar a Stripe real:
+1. Substituir `services/billing.ts` por chamadas HTTP reais para Cloud Functions.
+2. Mover a lógica de `processMockWebhook` para uma Cloud Function Node.js real.
+3. Configurar Webhooks no Dashboard da Stripe apontando para a Function.
+4. Remover as rotas `/mock-checkout`.

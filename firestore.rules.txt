@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getRole(bandId) {
+      // Safe check: ensure member doc exists before accessing .data
+      let memberPath = /databases/$(database)/documents/bands/$(bandId)/members/$(request.auth.uid);
+      return exists(memberPath) ? get(memberPath).data.role : null;
+    }
+
+    function isMember(bandId) {
+      return exists(/databases/$(database)/documents/bands/$(bandId)/members/$(request.auth.uid));
+    }
+
+    function isLeader(bandId) {
+      return getRole(bandId) == 'leader';
+    }
+
+    function isVice(bandId) {
+      return getRole(bandId) == 'vice' || isLeader(bandId);
+    }
+    
+    function canEditMusic(bandId) {
+       let r = getRole(bandId);
+       return r == 'leader' || r == 'vice' || r == 'regente';
+    }
+
+    function canEditBand(bandId) {
+       let r = getRole(bandId);
+       return r == 'leader' || r == 'vice';
+    }
+
+    // USERS COLLECTION
+    match /users/{userId} {
+      allow read, write: if isUser(userId);
+    }
+
+    // BANDS COLLECTION
+    match /bands/{bandId} {
+      // Create: Authenticated users can create a band
+      allow create: if isAuthenticated();
+      
+      // Read: Authenticated users can read band basic info (needed for Join by Code)
+      allow read: if isAuthenticated();
+
+      // Update: Only Leader or Vice can update band details
+      allow update: if isVice(bandId);
+      
+      // Delete: Only Leader
+      allow delete: if isLeader(bandId);
+
+      // MEMBERS SUBCOLLECTION
+      match /members/{memberId} {
+        allow read: if isMember(bandId);
+        allow write: if isUser(memberId) || isVice(bandId);
+      }
+
+      // SONGS SUBCOLLECTION (PHASE 3)
+      match /songs/{songId} {
+        allow read: if isMember(bandId);
+        allow write: if canEditMusic(bandId);
+      }
+
+      // PLAYLISTS SUBCOLLECTION (PHASE 3)
+      match /playlists/{playlistId} {
+        allow read: if isMember(bandId);
+        allow write: if canEditMusic(bandId);
+      }
+
+      // REGENCY SESSION (PHASE 4)
+      match /regency/session {
+        allow read: if isMember(bandId);
+        allow write: if canEditMusic(bandId);
+      }
+
+      // BILLING SUBCOLLECTION (PHASE 5)
+      match /billing/{document=**} {
+        allow read: if isMember(bandId);
+        // Mock Mode: Allow admins to write to simulate webhooks
+        // Also allow authenticated users to create billing doc during Band Creation
+        allow write: if canEditBand(bandId) || isAuthenticated();
+      }
+
+      match /billingLogs/{logId} {
+        allow read: if canEditBand(bandId);
+        allow write: if canEditBand(bandId);
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+# Checklist de Testes Manuais - Módulo de Bandas (Fase 2)
+
+## 1. Criação de Banda
+- [ ] Acessar /band/create
+- [ ] Tentar criar sem nome (Deve falhar)
+- [ ] Preencher Nome, Cidade, Estilo
+- [ ] Clicar em Criar
+- [ ] Verificar redirecionamento para Dashboard da Banda
+- [ ] Verificar no Firestore:
+  - [ ] Documento `bands/{id}` criado com dados corretos
+  - [ ] `code` gerado (formato BANDA-XXXXXX)
+  - [ ] Subcoleção `members/{uid}` contém o criador como 'leader'
+  - [ ] `users/{uid}.bands` atualizado com a referência
+
+## 2. Entrar em Banda (Join)
+- [ ] Copiar o código de uma banda existente (criada no passo 1)
+- [ ] Logar com OUTRO usuário
+- [ ] Acessar /band/join
+- [ ] Inserir código inválido (Deve mostrar erro)
+- [ ] Inserir código válido e instrumento
+- [ ] Clicar em Entrar
+- [ ] Verificar redirecionamento para Dashboard
+- [ ] Verificar badge de membro como "MUSICO" (default)
+- [ ] Tentar entrar novamente na mesma banda (Deve apenas redirecionar)
+
+## 3. Dashboard da Banda
+- [ ] Verificar se Nome, Cidade e Estilo aparecem
+- [ ] Testar botão de Copiar Código
+- [ ] Testar botão WhatsApp (deve abrir nova aba)
+- [ ] Verificar Cards de funcionalidades futuras (Devem estar bloqueados/cinza)
+- [ ] Verificar lista de membros (deve mostrar iniciais e nomes)
+
+## 4. Gestão de Membros
+- [ ] Logar como Leader
+- [ ] Acessar /band/{id}/members
+- [ ] Visualizar lista completa
+- [ ] Promover um "Musico" para "Regente" -> Verificar mudança na UI e Firestore
+- [ ] Promover "Regente" para "Vice" -> Verificar
+- [ ] Rebaixar "Vice" para "Musico" -> Verificar
+- [ ] Remover um membro -> Verificar se sumiu da lista e se doc foi deletado no Firestore
+- [ ] Logar como Musico (usuário removido ou outro)
+- [ ] Tentar acessar /band/{id}/members (Deve ver a lista, mas SEM controles de edição)
+
+## 5. Navegação Geral
+- [ ] Ir para /dashboard (Home)
+- [ ] Verificar se a lista "Minhas Bandas" mostra todas as bandas que o usuário participa
+- [ ] Clicar no card da banda leva ao painel correto

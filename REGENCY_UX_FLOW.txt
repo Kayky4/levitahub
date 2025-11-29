@@ -1,0 +1,42 @@
+# Fluxo de Usuário (UX) - Modo Regência
+
+## Jornada do Regente (Líder/Vice/Regente)
+
+1. **Entrada**:
+   - Via Dashboard da Banda -> Card "Modo Regência".
+   - Via Playlist -> Botão "Iniciar Regência".
+2. **Painel de Controle (`RegencyController`)**:
+   - **Header**: Mostra status "AO VIVO" pulsando. Botão de "Encerrar" em destaque (vermelho).
+   - **Esquerda (Música)**:
+     - Se iniciou via Playlist, vê botões "Anterior / Próxima" e dropdown.
+     - Abaixo, vê os Cards das Seções (Intro, Verso, Refrão).
+     - Clicar num card muda a cor para Azul (ativo) e dispara atualização para todos.
+   - **Direita (Cues)**:
+     - Botões grandes e rápidos: "VOLTA", "SOBE TOM", "SEGURA".
+     - Campo de texto para mensagens personalizadas (ex: "Bateria apenas").
+3. **Saída**:
+   - Clicar em Encerrar.
+   - Confirmação (Alert).
+   - Redireciona para Dashboard e seta `isActive: false`.
+
+## Jornada do Músico (Viewer)
+
+1. **Entrada**:
+   - Dashboard -> Card "Modo Regência" (Botão diz "Acompanhar").
+2. **Tela de Espera**:
+   - Se `isActive: false`, vê tela "Aguardando Regente..." com ícone pulsante.
+3. **Ao Vivo**:
+   - Assim que o regente inicia, a tela muda automaticamente.
+   - **Topo**: Título da música e Tom.
+   - **Centro**: Texto da cifra.
+   - **Comportamento**:
+     - A seção atual ganha destaque (fundo azulado, fonte maior).
+     - O scroll desce suavemente para centralizar a seção ativa.
+     - Se um Cue é enviado, um Popup amarelo gigante aparece no topo por 3 segundos.
+4. **Fim**:
+   - Quando regente encerra, volta para a tela de "Aguardando...".
+
+## Microinterações
+- **Cues**: Animação "Bounce In" para chamar atenção visual.
+- **Seções**: Transição suave de cor e escala ao mudar o foco.
+- **Botões do Regente**: Feedback tátil (active state) imediato para dar sensação de controle ágil.

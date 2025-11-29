@@ -1,0 +1,29 @@
+# Padrões de Loading (Skeletons)
+
+Em vez de spinners centrais que bloqueiam a visão, usamos Skeletons que imitam o layout final.
+
+## Card Grid (Dashboard/BandDashboard)
+```tsx
+<div className="grid ...">
+  <Skeleton height="12rem" variant="rectangular" />
+  <Skeleton height="12rem" variant="rectangular" />
+  <Skeleton height="12rem" variant="rectangular" />
+</div>
+```
+
+## Listas (Songs/Members)
+```tsx
+<div className="space-y-4">
+  <Skeleton height="4rem" variant="rectangular" />
+  <Skeleton height="4rem" variant="rectangular" />
+  <Skeleton height="4rem" variant="rectangular" />
+</div>
+```
+
+## Detalhes (Viewer)
+```tsx
+<div className="flex flex-col items-center">
+   <Skeleton width="60%" height="2rem" variant="text" />
+   <Skeleton width="40%" height="1rem" variant="text" />
+</div>
+```

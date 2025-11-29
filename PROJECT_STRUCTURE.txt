@@ -1,0 +1,15 @@
+src/
+├── components/       # Componentes reutilizáveis de UI e lógica (ex: ProtectedRoute, Botões)
+├── context/          # React Contexts globais (UserContext)
+├── hooks/            # Custom Hooks (useAuth)
+├── pages/            # Componentes de Página (Views)
+│   ├── auth/         # Páginas de autenticação (Login, Signup)
+│   ├── dashboard/    # Área logada (Placeholder na Fase 1)
+│   └── not-found/    # Página 404
+├── router/           # Configuração de rotas e navegação
+├── services/         # Integrações externas e lógica de serviço
+│   ├── auth.ts       # Funções de autenticação
+│   ├── firebase.ts   # Inicialização do Firebase
+│   └── types.ts      # Definições de tipos globais
+├── styles/           # Estilos globais e configurações de CSS
+└── App.tsx           # Componente raiz

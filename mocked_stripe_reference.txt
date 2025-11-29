@@ -1,0 +1,37 @@
+# Referência de Simulação Stripe
+
+Este documento guia como simular eventos de pagamento no LevitaHub Fase 5.
+
+## Eventos Suportados
+
+### 1. `checkout.session.completed`
+- **Quando ocorre:** Usuário finaliza o fluxo de compra com sucesso.
+- **Efeito no Sistema:**
+  - Cria Customer ID e Subscription ID fictícios.
+  - Define status como `trialing` (com 14 dias de prazo).
+  - Define data de renovação para 30 dias + trial.
+
+### 2. `invoice.payment_failed`
+- **Quando ocorre:** Tentativa de renovação mensal falha (cartão recusado).
+- **Efeito no Sistema:**
+  - Muda status para `past_due`.
+  - Define `graceEndsAt` para 3 dias no futuro.
+  - Banner amarelo aparece no Dashboard.
+
+### 3. `invoice.paid`
+- **Quando ocorre:** Renovação mensal bem sucedida.
+- **Efeito no Sistema:**
+  - Muda status para `active`.
+  - Limpa flags de `past_due`.
+  - Estende `currentPeriodEnd` por 30 dias.
+
+### 4. `customer.subscription.deleted`
+- **Quando ocorre:** Usuário cancela ou Stripe cancela por inadimplência.
+- **Efeito no Sistema:**
+  - Muda status para `canceled`.
+  - Bloqueio total de recursos premium.
+
+## Como Disparar (Manual)
+No Dashboard de Faturamento (`/band/:id/billing`), há uma seção "Ferramentas de Simulação".
+Use o botão "Checkout" para abrir a tela de simulação e escolher "Sucesso" ou "Falha".
+Use o botão "Rodar Job de Reconciliação" para simular a passagem do tempo (expirar trials).

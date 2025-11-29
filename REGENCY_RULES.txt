@@ -1,0 +1,17 @@
+// REGRAS DE SEGURANÇA DO MODO REGÊNCIA
+// Inserir dentro de match /bands/{bandId}
+
+match /regency/session {
+  
+  // Quem pode ler (ouvir a sessão)?
+  // R: Qualquer membro da banda.
+  allow read: if isMember(bandId);
+
+  // Quem pode escrever (controlar a sessão)?
+  // R: Apenas Líder, Vice ou Regente.
+  // O sistema de permissões da Fase 2 já define a role no documento do membro.
+  allow write: if canEditMusic(bandId); // Reutiliza a função helper criada na Fase 2/3
+  
+  // Validação de Schema (Opcional mas recomendado para integridade)
+  // allow update: if request.resource.data.keys().hasAll(['isActive', 'leaderId', 'updatedAt']);
+}

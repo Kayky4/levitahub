@@ -1,0 +1,37 @@
+# Sections Engine Specification (Motor de Seções)
+
+## Objetivo
+O objetivo do sistema de seções é quebrar o paradigma de "texto corrido" (comum em PDFs ou docs do Word) para "blocos lógicos" (Intro, Verso, Refrão). Isso é fundamental para o **Modo Regência (Fase 4)**.
+
+## Por que Seções?
+1. **Sincronização**: Na Fase 4, o Regente clicará no botão "Refrão" e todas as telas dos músicos rolarão automaticamente para o bloco do Refrão.
+2. **Looping**: Bandas de louvor frequentemente repetem o refrão ou voltam à ponte espontaneamente. Com texto corrido, isso exige scrool manual frenético. Com seções, basta um clique do líder.
+3. **Cues (Dicas)**: Cada seção possui um campo `cues` que pode exibir mensagens flutuantes no HUD dos músicos (ex: "Só Bateria" no Verso 2).
+
+## Funcionamento do Editor
+- **Divisão Automática**: Ao colar um texto grande, o sistema detecta parágrafos duplos e cria seções.
+- **Reordenamento**: Botões "Cima/Baixo" trocam o índice da seção no array.
+- **Edição Granular**: O usuário pode editar o texto de apenas um bloco sem afetar os outros.
+
+## Estrutura JSON no Firestore
+```json
+"sections": [
+  {
+    "id": "uuid-v4",
+    "index": 0,
+    "name": "Intro",
+    "content": "G  D  Em  C",
+    "cues": "Instrumental forte"
+  },
+  {
+    "id": "uuid-v4",
+    "index": 1,
+    "name": "Verso 1",
+    "content": "G\nAinda que a figueira...",
+    "cues": ""
+  }
+]
+```
+
+## Integração Futura (Fase 4)
+O WebSocket enviará apenas `{ type: 'SECTION_CHANGE', sectionId: 'uuid...' }`. O cliente receberá esse ID, buscará no DOM o elemento com `id="section-uuid..."` e fará o scroll suave até ele.

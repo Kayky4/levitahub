@@ -1,0 +1,81 @@
+# Contrato de API e Dados - Módulo de Bandas
+
+Este documento descreve a estrutura de dados e as operações esperadas no Firestore para a Fase 2.
+
+## Modelos de Dados (Schemas)
+
+### Collection: `bands`
+Document ID: Auto-generated (UUID)
+{
+  "id": "string",
+  "name": "string",
+  "city": "string (optional)",
+  "style": "string (optional)",
+  "code": "string (Unique, Format: BANDA-XXXXXX)",
+  "ownerId": "string (UID do Leader inicial)",
+  "createdAt": "timestamp (ISO String)",
+  "memberCount": "number (inteiro)"
+}
+
+### Subcollection: `bands/{bandId}/members`
+Document ID: User UID
+{
+  "userId": "string",
+  "name": "string (Denormalized from User Profile)",
+  "email": "string (Denormalized)",
+  "role": "enum('leader', 'vice', 'regente', 'musico')",
+  "instrument": "string (optional)",
+  "joinedAt": "timestamp (ISO String)"
+}
+
+### Collection: `users` (Update)
+O documento do usuário recebe um mapa para acesso rápido às suas bandas.
+{
+  "bands": {
+    "BAND_ID_1": {
+      "role": "leader",
+      "name": "Nome da Banda"
+    },
+    "BAND_ID_2": {
+      "role": "musico",
+      "name": "Outra Banda"
+    }
+  }
+}
+
+## Operações (Services)
+
+### `createBand(name, city, style)`
+- Input: Strings
+- Actions:
+  1. Batch Write:
+     - Set `bands/{newId}`
+     - Set `bands/{newId}/members/{uid}` (Role: Leader)
+     - Merge `users/{uid}` (Add band ref)
+- Output: `bandId` string
+
+### `joinBand(code, instrument)`
+- Input: Code string, Instrument string
+- Actions:
+  1. Query `bands` where `code` == input
+  2. If exists:
+     - Batch Write:
+       - Set `bands/{id}/members/{uid}` (Role: Musico)
+       - Update `bands/{id}` (increment memberCount)
+       - Merge `users/{uid}` (Add band ref)
+- Output: `bandId` string
+
+### `updateMemberRole(bandId, memberId, newRole)`
+- Input: IDs, Role Enum
+- Permissions: Caller must be > Target Role hierarchy
+- Actions:
+  - Update `bands/{id}/members/{memId}`
+  - Update `users/{memId}` (bands path)
+
+### `removeMember(bandId, memberId)`
+- Input: IDs
+- Permissions: Caller must be > Target Role hierarchy
+- Actions:
+  - Delete `bands/{id}/members/{memId}`
+  - Update `bands/{id}` (decrement memberCount)
+  - Update `users/{memId}` (remove map key)

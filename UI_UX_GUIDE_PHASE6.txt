@@ -1,0 +1,83 @@
+# Guia de Interface e UX (Fase 6)
+
+## 1. Sistema de Cores
+Utilizamos o Tailwind CSS com tokens semânticos para garantir consistência.
+
+### Brand (Primária)
+- Blue-600 (#2563EB): Ações principais, botões primários, links ativos.
+- Blue-50 (#EFF6FF): Fundos de destaque, hovers suaves.
+
+### Status
+- Success: Green-100 (bg) / Green-800 (text) - Badges de "Ativo".
+- Warning: Yellow-100 (bg) / Yellow-800 (text) - Badges de "Líder", Alertas.
+- Danger: Red-600 (text/bg) - Ações destrutivas, erros.
+- Info: Blue-100/800 or Purple-100/800 - Informações neutras.
+
+### Neutros
+- Gray-900: Títulos principais (Headings).
+- Gray-700: Texto do corpo (Body).
+- Gray-500: Textos secundários, metadados.
+- Gray-50: Background da aplicação.
+- White: Cards e superfícies.
+
+### Modo Regência (Dark Theme)
+- Background: #0B1120 (Midnight Navy).
+- Surface: #151E32 (Deep Blue).
+- Accent: Blue-500 (Neon Blue) e Red-500 (Live Indicator).
+
+## 2. Tipografia
+Fonte padrão: Sans-serif do sistema (-apple-system, BlinkMacSystemFont, Inter, Roboto...).
+
+- **H1 (Page Title)**: text-2xl / text-3xl, font-bold, tracking-tight.
+- **H2 (Section Title)**: text-lg / text-xl, font-bold.
+- **Body**: text-sm, leading-relaxed.
+- **Small/Meta**: text-xs, text-gray-500.
+- **Button Text**: font-medium.
+
+## 3. Componentes Base
+
+### Buttons
+Sempre use o componente `<Button />`.
+- `primary`: Ação principal da tela.
+- `secondary`: Cancelar, Voltar, Ações secundárias.
+- `danger`: Excluir, Sair.
+- `ghost`: Botões ícone ou links disfarçados.
+
+### Cards
+Sempre use o componente `<Card />`.
+- Borda: `border-gray-200`.
+- Sombra: `shadow-sm`.
+- Padding: `p-6` (desktop), `p-4` (mobile).
+- Border Radius: `rounded-xl`.
+
+### Inputs
+Sempre use `<Input />`.
+- Label: Sempre visível acima do input.
+- Erro: Texto vermelho abaixo do input.
+- Focus: Ring azul.
+
+## 4. Feedback de UX
+
+### Empty States
+Nunca deixe uma lista vazia em branco. Use `<EmptyState />`.
+- Ícone ilustrativo.
+- Título claro ("Nenhuma música encontrada").
+- Descrição da ação ("Clique abaixo para criar").
+- Botão de ação (Call to Action).
+
+### Loading States
+Substituir spinners de tela inteira por `<Skeleton />`.
+- Mantenha o layout da página visível, substitua o conteúdo por barras cinzas pulsantes.
+
+### Toasts
+Use `useToast()` para feedback de ações assíncronas.
+- Sucesso: "Salvo com sucesso".
+- Erro: "Falha ao conectar".
+
+### Modals
+Para ações destrutivas (Excluir, Sair), use `<Modal />` exigindo confirmação explícita.
+
+## 5. Responsividade
+- **Mobile First**: O layout deve funcionar em 320px+.
+- **Desktop**: Max-width de 7xl (1280px) centralizado.
+- **Navigation**: Menu hambúrguer em mobile (futuro), ou navbar simplificada.

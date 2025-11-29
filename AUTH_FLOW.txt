@@ -1,0 +1,36 @@
+# Fluxo de Autenticação - LevitaHub Fase 1
+
+## 1. Contexto Global (UserContext)
+A aplicação envolve toda a árvore de componentes com o `UserContext.Provider`.
+- Ao iniciar, o `UserContext` dispara um `useEffect` que subscreve ao `onAuthStateChanged` do Firebase.
+- Enquanto o Firebase verifica o estado da sessão (verificando tokens no IndexedDB/LocalStorage), a flag `loading` permanece `true`.
+- Quando o Firebase retorna o usuário (ou null), `loading` vira `false` e o `user` é atualizado.
+
+## 2. Login
+- O usuário acessa a rota `/`.
+- Se já estiver logado, o `AppRouter` redireciona automaticamente para `/dashboard`.
+- Se não, exibe o formulário de Login.
+- Ao submeter, chama `signInWithEmailAndPassword`.
+- Sucesso: Redireciona para `/dashboard`.
+- Erro: Exibe mensagem de erro na UI.
+
+## 3. Signup (Cadastro)
+- O usuário acessa `/signup`.
+- Preenche Nome, Email, Senha e Confirmação.
+- Ao submeter:
+  1. Cria usuário no Firebase Auth (`createUserWithEmailAndPassword`).
+  2. Atualiza o perfil do usuário com o Nome (`updateProfile`).
+- O `onAuthStateChanged` detecta o novo login automaticamente.
+- Redireciona para `/dashboard`.
+
+## 4. Rotas Protegidas (ProtectedRoute)
+- O componente `ProtectedRoute` verifica o contexto.
+- Se `loading` for true, exibe um spinner/texto de carregamento.
+- Se `loading` for false e `user` for null, redireciona para `/` (Login).
+- Se `user` existir, renderiza o componente filho (Outlet).
+
+## 5. Logout
+- O usuário clica em "Sair" no Dashboard.
+- Chama `signOut(auth)`.
+- O `UserContext` detecta a mudança para `user = null`.
+- O `ProtectedRoute` detecta a mudança e redireciona o usuário para a tela de Login.

@@ -1,0 +1,19 @@
+# Referência de Componentes (Design System)
+
+Localização: `src/components/ui/`
+
+| Componente | Descrição | Props Principais |
+|------------|-----------|------------------|
+| `Button` | Botão padrão do sistema com suporte a loading e ícones. | `variant` (primary, secondary...), `size`, `isLoading`, `leftIcon` |
+| `Input` | Campo de texto com label e tratamento de erro. | `label`, `error`, `helperText` |
+| `Card` | Container padrão com borda e sombra. | `hoverable`, `noPadding`, `onClick` |
+| `Badge` | Etiqueta para status e categorias. | `variant` (success, warning...), `size` |
+| `Skeleton` | Placeholder de carregamento (shimmer). | `variant` (text, circular, rectangular), `width`, `height` |
+| `EmptyState` | Placeholder para listas vazias. | `title`, `description`, `actionLabel`, `onAction`, `icon` |
+| `Modal` | Janela de diálogo para confirmações. | `isOpen`, `title`, `message`, `onConfirm`, `variant` |
+
+Localização: `src/context/`
+
+| Contexto | Descrição | Hook |
+|----------|-----------|------|
+| `ToastContext` | Sistema global de notificações flutuantes. | `useToast().showToast(msg, type)` |

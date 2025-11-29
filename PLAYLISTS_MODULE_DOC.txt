@@ -1,0 +1,26 @@
+# Módulo de Playlists (Fase 3)
+
+## Visão Geral
+Playlists representam eventos, cultos ou ensaios. Elas agrupam músicas em uma ordem específica.
+
+## Funcionalidades Principais
+
+### 1. Criação e Metadados
+- Título (ex: "Culto de Domingo")
+- Data (para ordenação cronológica na lista)
+- Descrição (opcional)
+
+### 2. Gerenciamento de Músicas
+- As músicas são **copiadas** (denormalizadas) para dentro do documento da playlist no array `songs`.
+- Isso inclui: `songId`, `title`, `artist`, `key`.
+- Motivo: Evitar N+1 leituras ao abrir uma playlist e garantir que o histórico do culto mostre o tom que foi usado naquele dia (futuramente, permitir alteração de tom por playlist).
+
+### 3. Ordenação (Drag & Drop)
+- Implementado usando HTML5 Native Drag & Drop API.
+- Ao soltar um item, o array `songs` é reordenado e um update é enviado ao Firestore.
+- A propriedade `order` é atualizada nos objetos, embora a ordem do array em si seja a fonte da verdade na UI.
+
+## Regras de Negócio
+- **Modo Regência**: O botão existe na interface de detalhes da playlist, mas está desabilitado com um tooltip indicando "Fase 4".
+- **Exclusão**: Apenas quem tem permissão de edição pode excluir playlists.
+- **Permissões**: Idênticas ao módulo de músicas (Leader, Vice, Regente editam; Músicos apenas visualizam).

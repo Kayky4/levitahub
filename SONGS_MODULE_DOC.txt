@@ -1,0 +1,35 @@
+# Módulo de Músicas (Fase 3)
+
+## Visão Geral
+O módulo de músicas é o repositório central de repertório da banda. Ele permite criar, editar e visualizar cifras com suporte a estruturação por seções (Verso, Refrão, etc.), preparando o terreno para a regência em tempo real da Fase 4.
+
+## Endpoints (Rotas)
+- `/band/:id/songs`: Lista todas as músicas da banda.
+- `/band/:id/songs/create`: Formulário de criação.
+- `/band/:id/songs/:songId`: Visualização (Modo Leitura).
+- `/band/:id/songs/:songId/edit`: Editor avançado de seções.
+
+## Fluxo de Criação
+1. Usuário preenche metadados (Título, Artista, Tom).
+2. Usuário cola o texto bruto da cifra no campo "Cifra Completa".
+3. O sistema utiliza uma lógica simples de quebra de linha dupla (`\n\n`) para sugerir a segmentação inicial em `sections`.
+4. O documento é salvo em `bands/{bandId}/songs/{songId}`.
+
+## Estrutura de Dados
+Cada música possui um array `sections`.
+```typescript
+interface SongSection {
+  id: string;       // UUID para referência interna
+  index: number;    // Ordem de exibição
+  name: string;     // Ex: "Refrão"
+  content: string;  // O texto com cifras
+  cues?: string;    // Instruções para a equipe (ex: "Entrar suave")
+}
+```
+
+## Permissões
+- **Visualizar**: Todos os membros (Musico, Regente, Vice, Leader).
+- **Criar/Editar/Excluir**: Apenas Regente, Vice e Leader.
+
+## PDF e Arquivos
+Nesta fase (MVP 1.0), não há suporte para upload de PDF. O foco é cifra em texto estruturado para permitir a reatividade do HTML e futuro controle de scroll via WebSocket.

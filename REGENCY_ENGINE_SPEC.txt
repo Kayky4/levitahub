@@ -1,0 +1,44 @@
+# Regency Engine Specification (Fase 4)
+
+## 1. Arquitetura do Tempo Real
+O coração do Modo Regência é o documento `bands/{bandId}/regency/session`. Diferente de uma coleção de logs, utilizamos um **single document pattern** que é sobrescrito e escutado (subscribed) pelos clientes.
+
+**Motivo**: Baixa latência e custo reduzido. Músicos não precisam saber o histórico, apenas o estado "agora".
+
+## 2. O Payload `RegencySession`
+```typescript
+{
+  isActive: boolean; // Se false, a tela do músico mostra "Aguardando..."
+  currentSongId: string | null; // ID da música carregada
+  currentSectionIndex: number | null; // Índice do array 'sections' da música
+  cue: {
+    id: string; // UUID, para disparar useEffect no cliente
+    type: 'preset' | 'custom';
+    message: string;
+    createdAt: string;
+  } | null;
+  leaderId: string; // Quem está regendo
+  updatedAt: string; // Timestamp para debounce e verificação de conflito
+}
+```
+
+## 3. Listener e Reatividade
+- **RegencyViewer**:
+  - `onSnapshot` no documento da sessão.
+  - Quando `currentSongId` muda -> busca o documento da música `songs/{id}` e renderiza.
+  - Quando `currentSectionIndex` muda -> executa `scrollIntoView` na `div` correspondente.
+  - Quando `cue.id` muda -> exibe o popup por 3 segundos.
+
+## 4. Controle de Concorrência (Single Leader)
+- O sistema não bloqueia hard via Rules a escrita (para simplificar o MVP), mas o cliente (`startSession`) verifica se `isActive == true` e `updatedAt < 10min` antes de assumir o controle.
+- Se um Líder tentar iniciar enquanto outro rege, o sistema alerta. Se ele confirmar, ele **sobrescreve** o líder anterior (takeover).
+
+## 5. Edge Cases e Tratamento
+- **Refresh da página do líder**: O estado persiste no Firestore, então o líder pode dar refresh e voltar ao controle sem derrubar a sessão dos músicos.
+- **Perda de conexão**: O Firestore SDK lida com o cache offline. Quando reconecta, sincroniza o estado mais recente.
+- **Música sem seções**: O índice 0 é assumido, ou nada é destacado.
+
+## 6. Performance
+- O payload é minúsculo (< 1KB).
+- A latência esperada com Firestore é < 500ms em boas conexões.
+- Não há polling; apenas Push via WebSockets (Firestore SDK).

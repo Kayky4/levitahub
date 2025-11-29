@@ -1,0 +1,31 @@
+# Roteiro de Testes Manuais - Faturamento Simulado
+
+## Cenário 1: Ativação de Assinatura (Trial)
+1. Crie uma nova banda.
+2. Vá para o Dashboard da Banda. Verifique o banner "Modo Gratuito Limitado".
+3. Tente criar uma música. Verifique se o botão está bloqueado/cinza.
+4. Vá para "Assinatura". Clique em "Ativar Plano Plus".
+5. Na tela de Checkout Simulado, clique em "Simular Pagamento Aprovado".
+6. Verifique redirecionamento. Status deve ser "Período de Teste".
+7. Verifique se o banner sumiu.
+8. Tente criar uma música. Deve estar liberado.
+
+## Cenário 2: Falha de Pagamento
+1. Com a banda do Cenário 1.
+2. Acesse a URL direta `/mock-checkout?session_id=TEST&band_id={SEU_ID}` (ou use o botão se disponível).
+3. Clique em "Simular Falha no Cartão".
+4. Volte ao Dashboard. Status deve ser "Pagamento Pendente" (Past Due).
+5. Verifique o Banner Amarelo.
+6. Tente acessar o Modo Regência. Deve ver a tela de bloqueio.
+
+## Cenário 3: Reconciliação (Fim do Trial)
+1. No Dashboard de Faturamento, clique em "Rodar Job de Reconciliação".
+   *Nota: Como o trial acaba de ser criado, nada deve acontecer.*
+2. Para testar de verdade, edite manualmente o Firestore (se souber) mudando `trialEndsAt` para ontem.
+3. Rode o Job novamente.
+4. O status deve mudar para `active` (simulando cobrança automática bem sucedida).
+
+## Cenário 4: Cancelamento/Bloqueio
+1. Disparar evento `customer.subscription.deleted` via código ou console (ou edite Firestore para status: 'canceled').
+2. Verifique se todos os botões de criação (Música, Playlist) estão bloqueados.
+3. Verifique Banner Vermelho.
