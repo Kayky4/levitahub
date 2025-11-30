@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 // @ts-ignore
 import { useParams, useNavigate } from 'react-router-dom';
@@ -20,6 +21,15 @@ const PRESET_CUES = ["VOLTA!", "SOBE TOM", "DESCE TOM", "IMPROVISO", "SEGURA", "
 // Level 1 (0.15) is extremely slow for precision
 const SPEED_LEVELS = [0.15, 0.4, 0.8, 1.5];
 const SPEED_LABELS = ["1x", "2x", "3x", "4x"];
+
+// Color Palette for Chords
+const CHORD_COLORS = [
+  { id: 'red', class: 'text-red-600', label: 'Vermelho (Padrão)' },
+  { id: 'blue', class: 'text-blue-600', label: 'Azul' },
+  { id: 'green', class: 'text-green-600', label: 'Verde' },
+  { id: 'orange', class: 'text-orange-500', label: 'Laranja' },
+  { id: 'purple', class: 'text-purple-600', label: 'Roxo' },
+];
 
 const RegencyController: React.FC = () => {
   const { bandId, playlistId } = useParams<{ bandId: string; playlistId?: string }>();
@@ -49,7 +59,7 @@ const RegencyController: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [localSettings, setLocalSettings] = useState({
     fontSize: 'lg',
-    chordColor: 'text-indigo-700',
+    chordColor: 'text-red-600', // Default RED
     highContrast: false,
     columns: 1
   });
@@ -300,14 +310,10 @@ const RegencyController: React.FC = () => {
       {/* --- HEADER (FIXED TOP) --- */}
       <header className="fixed top-0 left-0 right-0 h-24 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 lg:px-6 flex items-center justify-between z-[70] shadow-sm">
         
-        {/* Left: Status & Connection */}
+        {/* Left: Status & Connection - REMOVED "AO VIVO" */}
         <div className="flex flex-col items-start gap-1 w-1/4">
            <div className="flex items-center gap-2">
-             <div className="flex items-center gap-2 bg-red-50 border border-red-100 px-3 py-1 rounded-full">
-               <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
-               <span className="font-black text-red-600 tracking-widest text-[10px] uppercase">AO VIVO</span>
-             </div>
-             <div className="hidden md:block">
+             <div className="block">
                <ConnectionStatus status="connected" />
              </div>
            </div>
@@ -324,7 +330,7 @@ const RegencyController: React.FC = () => {
                  <span className="truncate max-w-[150px]">{currentSongData.artist}</span>
                  <span className="h-1 w-1 rounded-full bg-gray-300"></span>
                  <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs">
-                   {currentSongData.key} {transposeAmount !== 0 && `(${transposeAmount > 0 ? '+' : ''}${transposeAmount})`}
+                   {currentSongData.key} {transposeAmount !== 0 && `(${transposeAmount > 0 ? '+' : ''}{transposeAmount})`}
                  </span>
                </div>
              </>
@@ -358,9 +364,6 @@ const RegencyController: React.FC = () => {
              {currentSongData ? (
                 <div className={`max-w-7xl mx-auto transition-all duration-300 ${localSettings.columns === 2 ? 'grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6' : 'space-y-4 md:space-y-6'}`}>
                    {currentSongData.sections.map((section, idx) => {
-                      // Note: We removed the 'isActive' check entirely for visual rendering.
-                      // All sections now render with the "Active" highlighted style permanently.
-                      // This ensures consistency and avoids visual distraction on click.
                       return (
                         <div 
                           key={section.id}
@@ -374,7 +377,7 @@ const RegencyController: React.FC = () => {
                               </span>
                            </div>
                            
-                           {/* Chord Renderer wrapper needs to ensure chords don't overflow visually in a bad way */}
+                           {/* Chord Renderer with local settings */}
                            <div className="pointer-events-none w-full overflow-hidden">
                              <ChordRenderer 
                                content={section.content} 
@@ -415,22 +418,45 @@ const RegencyController: React.FC = () => {
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
                   </button>
                   {isSettingsOpen && (
-                    <div className="absolute bottom-full left-0 mb-3 w-64 bg-white border border-gray-200 rounded-xl shadow-xl p-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
-                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Tamanho da Fonte</h3>
-                       <div className="space-y-4">
-                          <div>
-                             <div className="flex bg-gray-100 rounded-lg p-1">
-                                {['md', 'lg', 'xl', '2xl'].map(s => (
-                                  <button key={s} onClick={() => setLocalSettings(p => ({...p, fontSize: s}))} className={`flex-1 py-2 text-xs font-bold rounded ${localSettings.fontSize === s ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}`}>{s.toUpperCase()}</button>
-                                ))}
-                             </div>
-                          </div>
+                    <div className="absolute bottom-full left-0 mb-3 w-72 bg-white border border-gray-200 rounded-xl shadow-xl p-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                       
+                       {/* Font Size Section */}
+                       <div className="mb-4">
+                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Tamanho da Fonte</h3>
+                         <div className="flex bg-gray-100 rounded-lg p-1">
+                            {['md', 'lg', 'xl', '2xl'].map(s => (
+                              <button key={s} onClick={() => setLocalSettings(p => ({...p, fontSize: s}))} className={`flex-1 py-2 text-xs font-bold rounded ${localSettings.fontSize === s ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}`}>{s.toUpperCase()}</button>
+                            ))}
+                         </div>
                        </div>
+
+                       {/* NEW: Chord Color Section */}
+                       <div>
+                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Cor dos Acordes</h3>
+                         <div className="flex gap-2 justify-between">
+                            {CHORD_COLORS.map(color => (
+                              <button
+                                key={color.id}
+                                onClick={() => setLocalSettings(p => ({...p, chordColor: color.class}))}
+                                title={color.label}
+                                className={`
+                                  w-8 h-8 rounded-full border-2 transition-all 
+                                  ${localSettings.chordColor === color.class ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}
+                                `}
+                                style={{ backgroundColor: 'currentColor' }}
+                              >
+                                <span className={color.class}></span> {/* Used for currentColor trigger */}
+                                <span className={`block w-full h-full rounded-full ${color.class.replace('text-', 'bg-')}`}></span>
+                              </button>
+                            ))}
+                         </div>
+                       </div>
+
                     </div>
                   )}
                 </div>
 
-                {/* --- 2. RESTORED: Column Layout Toggle --- */}
+                {/* --- 2. Column Layout Toggle --- */}
                 <button
                   onClick={() => setLocalSettings(p => ({ ...p, columns: p.columns === 1 ? 2 : 1 }))}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${localSettings.columns === 2 ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-indigo-500'}`}

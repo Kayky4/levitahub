@@ -37,7 +37,7 @@ const Input: React.FC<InputProps> = ({ label, error, helperText, rightElement, c
           {...props}
         />
         {rightElement && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-4">
             {rightElement}
           </div>
         )}

@@ -31,18 +31,19 @@ const ChordRenderer: React.FC<Props> = ({ content, transpose = 0, fontSize = 'lg
 
   // -- THEME CONFIGURATION --
   
-  // Controller (Clean/Light Mode)
+  // Controller (Clean/Adaptive Mode - for Editors and Dashboards)
+  // DEFAULT RED for chords as requested
   const controllerStyles = {
-    container: 'text-gray-900',
-    chord: customTheme?.chordColor || 'text-indigo-700',
-    text: customTheme?.textColor || 'text-gray-900',
-    header: 'text-gray-600 bg-gray-100 border-gray-200'
+    container: 'text-gray-900 dark:text-gray-200',
+    chord: customTheme?.chordColor || 'text-red-600 font-black', // Default RED
+    text: customTheme?.textColor || 'text-gray-900 dark:text-gray-200',
+    header: 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10'
   };
 
-  // Viewer (Dark/Stage Mode)
+  // Viewer (Dark/Stage Mode - High Contrast)
   const viewerStyles = {
     container: 'text-gray-200',
-    chord: 'text-yellow-400',
+    chord: 'text-yellow-400 font-bold', // Viewer keeps yellow for contrast on dark unless overridden
     text: 'text-white',
     header: 'text-indigo-300 bg-indigo-500/20 border-indigo-500/30'
   };
@@ -77,7 +78,7 @@ const ChordRenderer: React.FC<Props> = ({ content, transpose = 0, fontSize = 'lg
           return (
             <div 
               key={line.id} 
-              className={`${styles.chord} font-bold whitespace-pre mt-[0.2em] select-text`}
+              className={`${styles.chord} whitespace-pre mt-[0.2em] select-text tracking-tight`}
             >
               {line.content}
             </div>

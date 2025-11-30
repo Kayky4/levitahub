@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
-import { getBandBilling } from '../../services/billing';
 import CommandPalette from '../ui/CommandPalette';
 import ThemeToggle from '../ui/ThemeToggle';
+import BandSwitcher from './BandSwitcher';
+import BottomNav from './BottomNav';
 
 interface Props {
   children: React.ReactNode;
@@ -19,20 +21,12 @@ const AppLayout: React.FC<Props> = ({ children }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Mobile Menu State
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Plus Badge State
-  const [isPlusActive, setIsPlusActive] = useState(false);
-
   // --- CONTEXT DETECTION LOGIC ---
-  // Detect if we are inside a specific band context
   const bandIdMatch = location.pathname.match(/^\/band\/([^\/]+)/);
   const rawBandId = bandIdMatch ? bandIdMatch[1] : null;
-  // Ensure 'create' and 'join' are not treated as Band IDs
   const currentBandId = (rawBandId === 'create' || rawBandId === 'join') ? null : rawBandId;
 
-  // Keyboard shortcuts (Keep Cmd+K functionality hidden)
+  // Keyboard shortcuts
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -44,7 +38,7 @@ const AppLayout: React.FC<Props> = ({ children }) => {
     return () => document.removeEventListener('keydown', down);
   }, []);
 
-  // Click outside to close profile menu
+  // Click outside profile menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
@@ -52,218 +46,148 @@ const AppLayout: React.FC<Props> = ({ children }) => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  // Check for Active Subscription in current Band Context
-  useEffect(() => {
-    const checkBillingStatus = async () => {
-      if (currentBandId) {
-        try {
-          const billing = await getBandBilling(currentBandId);
-          if (billing && (billing.subscriptionStatus === 'active' || billing.subscriptionStatus === 'trialing')) {
-            setIsPlusActive(true);
-          } else {
-            setIsPlusActive(false);
-          }
-        } catch (error) {
-          setIsPlusActive(false);
-        }
-      } else {
-        setIsPlusActive(false);
-      }
-    };
-
-    checkBillingStatus();
-  }, [currentBandId]);
-
-  // Hide Navbar on Auth pages AND Regency Mode pages
+  // Pages where nav is hidden
   const isRegency = location.pathname.includes('/regency');
   const hideNavbar = ['/', '/signup'].includes(location.pathname) || isRegency;
 
-  // Helper styles for nav links - increased padding
-  const navLinkStyle = "px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[44px] flex items-center";
-  
-  // Mobile nav style - larger touch target
-  const mobileNavLinkStyle = "block px-4 py-4 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors min-h-[56px] flex items-center";
+  // Desktop Nav Link Style (Tabs)
+  const desktopNavLinkStyle = ({ isActive }: { isActive: boolean }) => `
+    px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200
+    ${isActive 
+      ? 'bg-gray-900 text-white dark:bg-white dark:text-black shadow-sm' 
+      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'
+    }
+  `;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-midnight-900 text-gray-900 dark:text-slate-200 font-sans selection:bg-indigo-500/30 transition-colors duration-300">
       <CommandPalette isOpen={isCmdOpen} setIsOpen={setIsCmdOpen} />
       
       {!hideNavbar && user && (
-        <nav className="border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-midnight-900/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+        <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/80 dark:border-white/5 bg-white/80 dark:bg-midnight-900/80 backdrop-blur-xl transition-all duration-300">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
-              {/* Logo Area */}
+              
+              {/* LEFT: Logo & Context Switcher */}
               <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/dashboard')}>
-                  <div className="h-10 w-10 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] group-hover:scale-105 transition-transform">
-                     <span className="font-bold text-white text-lg">L</span>
+                {/* Full Logo (Icon + Text) */}
+                <div 
+                  className="flex items-center gap-2 cursor-pointer group" 
+                  onClick={() => navigate('/dashboard')}
+                >
+                  <div className="h-9 w-9 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                     <span className="font-black text-white text-lg leading-none">L</span>
                   </div>
-                  <div className="hidden sm:block relative">
-                    <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white block leading-none">
-                      LevitaHub
-                      {isPlusActive && (
-                        <sup className="ml-1 align-top text-[9px] font-black tracking-widest bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm">
-                          PLUS
-                        </sup>
-                      )}
-                    </span>
-                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase">Beta</span>
-                  </div>
+                  <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white leading-none">
+                    LevitaHub
+                  </span>
                 </div>
 
-                {/* Desktop Navbar Menus - CONTEXTUAL */}
-                <div className="hidden md:flex items-center gap-1 ml-4">
-                  {currentBandId ? (
-                    /* Band Context Menu */
-                    <>
-                      <Link to="/dashboard" className={navLinkStyle}>
-                        Início
-                      </Link>
-                      <Link to={`/band/${currentBandId}/songs`} className={navLinkStyle}>
-                        Músicas
-                      </Link>
-                      <Link to={`/band/${currentBandId}/playlists`} className={navLinkStyle}>
-                        Eventos
-                      </Link>
-                      <Link to={`/band/${currentBandId}/members`} className={navLinkStyle}>
-                        Equipe
-                      </Link>
-                    </>
-                  ) : (
-                    /* Global Context Menu (Empty as requested) */
-                    null
-                  )}
-                </div>
+                {/* Divider */}
+                <div className="h-6 w-px bg-gray-200 dark:bg-white/10 hidden sm:block"></div>
+
+                {/* Band Switcher (Context) */}
+                <BandSwitcher />
               </div>
               
-              {/* Right Actions Area */}
-              <div className="flex items-center gap-3 sm:gap-4">
+              {/* RIGHT: System & Actions */}
+              <div className="flex items-center gap-2 sm:gap-3">
                 
-                {/* Mobile Menu Button - Only show if there are menu items */}
+                {/* Desktop Navigation Tabs (Only visible on Desktop and if inside a band) */}
                 {currentBandId && (
-                  <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="md:hidden p-2 rounded-lg text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 focus:outline-none transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation"
-                    aria-label="Menu"
-                  >
-                    {isMobileMenuOpen ? (
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    ) : (
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      </svg>
-                    )}
-                  </button>
+                  <div className="hidden lg:flex items-center gap-1 mr-4 bg-gray-100/50 dark:bg-white/5 p-1 rounded-full border border-gray-200 dark:border-white/5">
+                    <NavLink to={`/band/${currentBandId}/dashboard`} className={desktopNavLinkStyle}>Início</NavLink>
+                    <NavLink to={`/band/${currentBandId}/songs`} className={desktopNavLinkStyle}>Músicas</NavLink>
+                    <NavLink to={`/band/${currentBandId}/playlists`} className={desktopNavLinkStyle}>Eventos</NavLink>
+                    <NavLink to={`/band/${currentBandId}/members`} className={desktopNavLinkStyle}>Equipe</NavLink>
+                  </div>
                 )}
 
-                {/* Theme Toggle */}
                 <ThemeToggle />
 
-                <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1 hidden sm:block"></div>
-
                 {/* Profile Dropdown */}
-                <div className="relative" ref={profileMenuRef}>
-                  <div 
-                    className="flex items-center gap-3 pl-2 cursor-pointer group min-h-[44px]" 
+                <div className="relative ml-1" ref={profileMenuRef}>
+                  <button 
+                    className="flex items-center gap-2 focus:outline-none" 
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   >
-                    <div className="hidden md:flex flex-col items-end">
-                       <span className="text-sm font-bold text-gray-700 dark:text-gray-200 leading-none group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {user.displayName}
-                       </span>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 border border-gray-300 dark:border-white/10 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-300 ring-2 ring-transparent group-hover:ring-indigo-500/50 transition-all shadow-lg">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-white/10 dark:to-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center text-sm font-bold text-gray-700 dark:text-gray-300 ring-2 ring-transparent hover:ring-indigo-500/50 transition-all">
                       {user.displayName?.charAt(0) || user.email?.charAt(0)}
                     </div>
-                  </div>
+                  </button>
 
                   {/* Dropdown Menu */}
-                  {isProfileMenuOpen && (
-                    <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-midnight-800 rounded-xl shadow-xl border border-gray-200 dark:border-white/10 py-2 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                       <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 md:hidden">
-                          <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Logado como</p>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.displayName}</p>
-                       </div>
-                       
-                       <Link 
-                         to="/profile" 
-                         className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-white transition-colors min-h-[48px] flex items-center"
-                         onClick={() => setIsProfileMenuOpen(false)}
-                       >
-                         Meu Perfil
-                       </Link>
-                       
-                       <div className="border-t border-gray-100 dark:border-white/5 my-1"></div>
-                       
-                       <button 
-                         onClick={() => {
-                           setIsProfileMenuOpen(false);
-                           signOutUser();
-                         }}
-                         className="block w-full text-left px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors min-h-[48px] flex items-center"
-                       >
-                         Sair
-                       </button>
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {isProfileMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.1 }}
+                        className="absolute right-0 mt-3 w-56 bg-white dark:bg-[#1A1F2E] rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 py-1 overflow-hidden z-50 origin-top-right"
+                      >
+                         <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Conectado como</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.displayName}</p>
+                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                         </div>
+                         
+                         <div className="p-1">
+                           <Link 
+                             to="/profile" 
+                             className="block px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                             onClick={() => setIsProfileMenuOpen(false)}
+                           >
+                             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                             Meu Perfil
+                           </Link>
+                           
+                           {/* Only show Settings in Global Context for now */}
+                           <button 
+                             className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed"
+                             title="Em breve"
+                           >
+                             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                             Configurações
+                           </button>
+                         </div>
+                         
+                         <div className="h-px bg-gray-100 dark:bg-white/5 mx-2 my-1"></div>
+                         
+                         <div className="p-1">
+                           <button 
+                             onClick={() => {
+                               setIsProfileMenuOpen(false);
+                               signOutUser();
+                             }}
+                             className="w-full text-left px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+                           >
+                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                             Sair
+                           </button>
+                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Mobile Menu (Contextual) */}
-          {isMobileMenuOpen && currentBandId && (
-            <div className="md:hidden bg-white dark:bg-midnight-900 border-t border-gray-200 dark:border-white/10 animate-in slide-in-from-top-2 duration-200 absolute w-full left-0 z-40 shadow-xl">
-              <div className="px-4 py-3 space-y-2">
-                <Link
-                  to="/dashboard"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={mobileNavLinkStyle}
-                >
-                  🏠 Início
-                </Link>
-                <Link
-                  to={`/band/${currentBandId}/songs`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={mobileNavLinkStyle}
-                >
-                  🎵 Músicas
-                </Link>
-                <Link
-                  to={`/band/${currentBandId}/playlists`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={mobileNavLinkStyle}
-                >
-                  📅 Eventos
-                </Link>
-                <Link
-                  to={`/band/${currentBandId}/members`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={mobileNavLinkStyle}
-                >
-                  👥 Equipe
-                </Link>
-              </div>
-            </div>
-          )}
         </nav>
       )}
 
-      <main className="relative min-h-[calc(100vh-64px)]">
+      {/* Main Content Area */}
+      <main className={`relative ${!hideNavbar ? 'pt-16' : ''} ${currentBandId ? 'pb-24 md:pb-0' : ''}`}>
          {children}
       </main>
+
+      {/* Mobile Bottom Navigation (Only when inside a band) */}
+      {!hideNavbar && currentBandId && (
+        <BottomNav bandId={currentBandId} />
+      )}
     </div>
   );
 };

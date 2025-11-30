@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 // @ts-ignore
 import { useParams, useNavigate } from 'react-router-dom';
@@ -236,7 +237,8 @@ const SongCreate: React.FC = () => {
            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
               {rawContent ? (
                  <div className="max-w-lg mx-auto">
-                    <ChordRenderer content={rawContent} fontSize="md" />
+                    {/* Use 'controller' mode for correct theming in editor context */}
+                    <ChordRenderer content={rawContent} fontSize="md" mode="controller" />
                  </div>
               ) : (
                  <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 opacity-60">

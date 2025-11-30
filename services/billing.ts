@@ -179,12 +179,21 @@ export const processMockWebhook = async (bandId: string, event: MockStripeEvent)
      await updateDoc(billingRef, { ...updates, updatedAt: new Date().toISOString() });
   }
 
+  // Safe stringify for logging to avoid circular reference errors
+  let detailsString = '{}';
+  try {
+    detailsString = JSON.stringify(event.data);
+  } catch (e) {
+    console.error("Failed to stringify event data for logging", e);
+    detailsString = '{"error": "Circular reference or invalid data in event"}';
+  }
+
   // 2. Log Event
   await addDoc(logsRef, {
     eventId: event.id,
     type: event.type,
     status: 'processed',
-    details: JSON.stringify(event.data),
+    details: detailsString,
     createdAt: new Date().toISOString()
   });
 };

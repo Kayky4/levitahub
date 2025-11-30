@@ -133,10 +133,18 @@ const UserProfile: React.FC = () => {
   // Dirty Check Effect
   useEffect(() => {
     if (loading) return;
+    
+    // Compare array content manually to avoid JSON.stringify circular reference issues
+    const currentInst = instruments || [];
+    const initialInst = initialData.current.instruments || [];
+    const instrumentsChanged = 
+      currentInst.length !== initialInst.length ||
+      !currentInst.every((val, index) => val === initialInst[index]);
+
     const hasChanged = 
       displayName !== initialData.current.displayName ||
       bio !== initialData.current.bio ||
-      JSON.stringify(instruments) !== JSON.stringify(initialData.current.instruments);
+      instrumentsChanged;
     
     setIsDirty(hasChanged);
   }, [displayName, bio, instruments, loading]);

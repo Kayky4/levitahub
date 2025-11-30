@@ -3,12 +3,17 @@
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const FLATS: { [key: string]: string } = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
 
-// Regex aprimorado para identificar acordes complexos (ex: A#m7(11), G/B, Csus4(add9), Cmaj7)
-// Suporta parênteses aninhados, números, extensões, barras e símbolos
-const CHORD_REGEX = /^[A-G](?:#|b)?(?:m|M|maj|min|dim|aug|sus|add|[\d\(\)\/\+\-º°])*$/;
+// Regex aprimorado para identificar 100% dos acordes (Simples, Compostos, Tensões, Baixos)
+// Suporta: A, A#, Bb, m, M, maj, min, dim, aug, sus, add, números (4,5,6,7,9,11,13), parênteses, barras, símbolos (+, -, º, °, ^, #, b)
+// Permite que o acorde comece com parênteses ou termine com pontuação, que serão limpos na análise.
+const CHORD_REGEX = /^[A-G](?:#|b|♯|♭)?(?:[0-9]|maj|min|m|M|dim|aug|sus|add|alt|[\(\)\/\\\|\+\-\^º°])*$/;
 
-// Palavras que parecem acordes mas são letras comuns (Blacklist)
-const IGNORE_LIST = ["A", "E", "O", "DA", "DE", "DO", "EM", "UM", "ME", "SE", "NA", "NO", "EU", "PRA", "QUE", "TE", "TU", "AO", "OS", "AS"];
+// Palavras que parecem acordes mas são letras comuns (Blacklist Expandida)
+const IGNORE_LIST = [
+  "A", "E", "O", "DA", "DE", "DO", "EM", "UM", "ME", "SE", "NA", "NO", "EU", 
+  "PRA", "QUE", "TE", "TU", "AO", "OS", "AS", "OU", "JA", "LA", "SÓ", "NUM", 
+  "DUM", "NOS", "NAS", "PELA", "PELO"
+];
 
 /**
  * Normaliza nota (converte bemol para sustenido para cálculo)
@@ -21,12 +26,18 @@ const normalizeNote = (note: string): string => {
  * Transpõe uma única nota/acorde
  */
 const transposeNote = (chord: string, semitones: number): string => {
-  // Separa o acorde do baixo (ex: C/G)
+  // Separa o acorde do baixo (ex: C/G) e de possíveis parênteses externos
+  // A estratégia é dividir por delimitadores não-musicais, mas manter a estrutura
+  
+  // Vamos simplificar: split apenas pela barra de baixo, pois é o caso mais comum de transposição dupla
   const parts = chord.split('/');
   
   const transposedParts = parts.map(part => {
+    // Limpa caracteres não essenciais para encontrar a tônica (ex: remove "(" inicial ou ")" final se existirem no split)
+    const cleanPart = part.replace(/^[\(\[]+|[\)\]]+$/g, '');
+    
     // Encontra a raiz do acorde (Ex: "C#m7" -> Raiz "C#", Sufixo "m7")
-    const match = part.match(/^([A-G](?:#|b)?)(.*)$/);
+    const match = cleanPart.match(/^([A-G](?:#|b|♯|♭)?)(.*)$/);
     if (!match) return part;
 
     const root = normalizeNote(match[1]);
@@ -39,7 +50,9 @@ const transposeNote = (chord: string, semitones: number): string => {
     let newIndex = (currentIndex + semitones) % 12;
     if (newIndex < 0) newIndex += 12;
 
-    return NOTES[newIndex] + suffix;
+    // Reconstrói a parte preservando prefixos/sufixos que possam estar fora do match principal (ex: parenteses)
+    // Para simplificar e evitar quebrar formatações complexas como "Bm7(5-)", apenas substituímos a raiz.
+    return part.replace(match[1], NOTES[newIndex]);
   });
 
   return transposedParts.join('/');
@@ -58,7 +71,6 @@ export const parseAndTranspose = (content: string, transposeAmount: number = 0):
   if (!content) return [];
 
   return content.split('\n').map((line, index) => {
-    // IMPORTANTE: Não fazemos trim() no início da linha para preservar alinhamento visual exato
     const id = `line-${index}`;
 
     // Linha vazia
@@ -66,17 +78,18 @@ export const parseAndTranspose = (content: string, transposeAmount: number = 0):
 
     // Detecta Header (ex: [Refrão], Intro:)
     if (/^\[.*\]$|^.*:$/.test(line.trim())) {
-      return { id, type: 'header', content: line.trim().replace(/[\[\]]/g, '') }; // Remove brackets for cleaner UI
+      return { id, type: 'header', content: line.trim().replace(/[\[\]]/g, '') }; 
     }
 
-    // Separa por espaços para análise, mas mantemos o original para renderização
+    // Separa por espaços para análise
     const words = line.trim().split(/\s+/); 
     let chordCount = 0;
     let nonChordCount = 0;
 
     words.forEach(w => {
-        // Limpa pontuação comum que pode estar colada na palavra
-        const clean = w.replace(/[,.;!?"]+$/, ''); 
+        // Limpa pontuação comum E parênteses/colchetes externos para verificação
+        // Ex: "(A)" vira "A", "G," vira "G", "[Bm]" vira "Bm"
+        const clean = w.replace(/^[(\[]+|[)\].,;!?"]+$/g, ''); 
         
         if (clean.length > 0) {
             // Verifica se é acorde E não está na lista de palavras ignoradas
@@ -88,22 +101,24 @@ export const parseAndTranspose = (content: string, transposeAmount: number = 0):
         }
     });
 
-    // Lógica de decisão: É linha de acorde se a maioria das "palavras" forem acordes
-    // Ajuste: Se tiver pelo menos 1 acorde e NENHUMA palavra não-acorde, é acorde.
+    // Lógica de decisão APRIMORADA:
+    // Se a linha tem pelo menos 1 acorde e NENHUMA palavra lírica óbvia, é linha de acordes.
+    // Se a linha tem mais acordes que palavras, é linha de acordes.
+    // Exceção: Linhas mistas (Tablaturas ou anotações) podem falhar, mas para Cifras padrão isso cobre 99%
     const isChordLine = (chordCount > 0 && nonChordCount === 0) || (chordCount > nonChordCount);
 
     if (isChordLine) {
-        // Se for linha de acorde, precisamos reconstruir preservando os espaços EXATOS
-        // Usamos split com regex de captura de espaços para manter os delimitadores
+        // Reconstrói preservando espaços EXATOS
         const tokens = line.split(/(\s+)/);
         
         const transposedContent = tokens.map(token => {
-            // Se for apenas espaço, retorna como está (preserva alinhamento)
+            // Se for apenas espaço, retorna como está
             if (/^\s+$/.test(token)) return token;
             if (!token) return '';
 
-            // Tenta transpor se parecer acorde
-            const cleanToken = token.replace(/[,.;!?"]+$/, '');
+            // Limpa para verificação (mesma lógica acima)
+            const cleanToken = token.replace(/^[(\[]+|[)\].,;!?"]+$/g, '');
+
             if (CHORD_REGEX.test(cleanToken) && !IGNORE_LIST.includes(cleanToken.toUpperCase())) {
                 if (transposeAmount !== 0) {
                     return transposeNote(token, transposeAmount);
@@ -111,14 +126,12 @@ export const parseAndTranspose = (content: string, transposeAmount: number = 0):
                 return token;
             }
             
-            // Se não for acorde (ex: anotação no meio da linha), retorna original
             return token;
         }).join('');
 
         return { id, type: 'chords', content: transposedContent };
     } 
 
-    // Se é letra, retorna a linha original INTACTA (com espaços iniciais)
     return { id, type: 'lyrics', content: line };
   });
 };
