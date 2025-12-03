@@ -75,7 +75,7 @@ export interface ParsedLine {
  * Utiliza tokenização inteligente para preservar espaços.
  */
 export const parseAndTranspose = (content: string, transposeAmount: number = 0): ParsedLine[] => {
-  if (!content) return [];
+  if (!content || typeof content !== 'string') return [];
 
   return content.split('\n').map((line, index) => {
     const id = `line-${index}`;

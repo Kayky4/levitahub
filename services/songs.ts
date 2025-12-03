@@ -21,13 +21,42 @@ export const getBandSongs = async (bandId: string): Promise<Song[]> => {
     orderBy('title', 'asc')
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Song));
+  // Normalize listed songs too just in case, though usually only details need full sections
+  return snapshot.docs.map(doc => {
+    const s = { id: doc.id, ...doc.data() } as Song;
+    if ((!s.sections || s.sections.length === 0) && s.content) {
+       s.sections = [{ id: 'legacy', index: 0, name: 'Geral', content: s.content }];
+    }
+    return s;
+  });
 };
 
 export const getSong = async (bandId: string, songId: string): Promise<Song | null> => {
   const docRef = doc(db, `bands/${bandId}/${COLLECTION_NAME}`, songId);
   const snap = await getDoc(docRef);
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Song) : null;
+  
+  if (!snap.exists()) return null;
+
+  const song = { id: snap.id, ...snap.data() } as Song;
+
+  // ROBUST FIX: Normalize Legacy Data (Missing sections but has content)
+  // This prevents blank screens if sections array is missing/empty
+  if ((!song.sections || song.sections.length === 0) && song.content) {
+    song.sections = [{
+      id: 'legacy-section-auto',
+      index: 0,
+      name: 'Arquivo Completo',
+      content: song.content,
+      cues: ''
+    }];
+  }
+  
+  // Ensure sections is at least an empty array to prevent crashes in maps
+  if (!song.sections) {
+    song.sections = [];
+  }
+
+  return song;
 };
 
 export const createSong = async (
