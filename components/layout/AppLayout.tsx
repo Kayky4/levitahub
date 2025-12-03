@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,7 +64,7 @@ const AppLayout: React.FC<Props> = ({ children }) => {
   `;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-midnight-900 text-gray-900 dark:text-slate-200 font-sans selection:bg-indigo-500/30 transition-colors duration-300">
+    <div className="min-h-screen min-h-[100dvh] bg-gray-50 dark:bg-midnight-900 text-gray-900 dark:text-slate-200 font-sans selection:bg-indigo-500/30 transition-colors duration-300 flex flex-col">
       <CommandPalette isOpen={isCmdOpen} setIsOpen={setIsCmdOpen} />
       
       {!hideNavbar && user && (
@@ -180,7 +181,7 @@ const AppLayout: React.FC<Props> = ({ children }) => {
       )}
 
       {/* Main Content Area */}
-      <main className={`relative ${!hideNavbar ? 'pt-16' : ''} ${currentBandId ? 'pb-24 md:pb-0' : ''}`}>
+      <main className={`flex-1 relative ${!hideNavbar ? 'pt-16' : ''} ${currentBandId ? 'pb-32 md:pb-0' : ''}`}>
          {children}
       </main>
 

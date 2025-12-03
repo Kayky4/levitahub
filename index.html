@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LevitaHub</title>
+    <script>
+      // BLOCKING SCRIPT: Theme Initialization to prevent FOUC
+      (function() {
+        try {
+          var storageKey = 'levitahub-ui-theme';
+          var storedTheme = localStorage.getItem(storageKey);
+          var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          
+          var shouldBeDark = storedTheme === 'dark' || (!storedTheme && supportDarkMode);
+          
+          if (shouldBeDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          console.error('Theme init failed', e);
+        }
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -82,10 +102,8 @@
         background: rgba(255, 255, 255, 0.2);
       }
     </style>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-50 dark:bg-midnight-900 text-gray-900 dark:text-slate-200 antialiased overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>

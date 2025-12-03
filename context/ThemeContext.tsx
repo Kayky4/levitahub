@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'dark' | 'light';
@@ -25,9 +26,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   defaultTheme = 'light',
   storageKey = 'levitahub-ui-theme',
 }) => {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const [theme, setTheme] = useState<Theme>(() => {
+    // 1. Check if HTML already has class (applied by blocking script)
+    if (typeof window !== 'undefined') {
+      if (document.documentElement.classList.contains('dark')) return 'dark';
+      if (document.documentElement.classList.contains('light')) return 'light';
+    }
+    // 2. Fallback to storage or default
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
