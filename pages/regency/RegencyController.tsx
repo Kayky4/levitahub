@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { startSession, endSession, setCurrentSong, setCurrentSection, sendCue, setTranspose, canControlRegency, subscribeToSession, toggleScrollPlay, setScrollSpeed, syncScrollPosition } from '../../services/regency';
 import { getBandMembers } from '../../services/bands';
-import { getBandBilling, canUseFeature } from '../../services/billing';
 import { getPlaylist, updatePlaylistOrder } from '../../services/playlists';
 import { getSong, getBandSongs } from '../../services/songs';
 import { useAuth } from '../../hooks/useAuth';
@@ -85,12 +84,18 @@ const RegencyController: React.FC = () => {
     if (!bandId || !user) return;
     const init = async () => {
       try {
-        const [billing, members] = await Promise.all([
-          getBandBilling(bandId),
+        const [bandDetails, members] = await Promise.all([
+          import('../../services/bands').then(mod => mod.getBandDetails(bandId)),
           getBandMembers(bandId)
         ]);
 
-        if (!billing || !canUseFeature('regency', billing.subscriptionStatus)) {
+        if (!bandDetails) {
+          setStatus('error');
+          return;
+        }
+
+        const { isSubscriptionActive } = await import('../../services/billing');
+        if (!isSubscriptionActive(bandDetails)) {
           setStatus('blocked');
           return;
         }

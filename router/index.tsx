@@ -1,42 +1,51 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth } from '../hooks/useAuth';
+import ProtectedRoute from './ProtectedRoute';
+
+// Public Pages
 import Login from '../pages/auth/Login';
 import Signup from '../pages/auth/Signup';
-import Dashboard from '../pages/dashboard';
-import NotFound from '../pages/not-found/NotFound';
-import ProtectedRoute from '../components/ProtectedRoute';
-import { useAuth } from '../hooks/useAuth';
 
-// User & Settings
+// Protected Pages
+import Dashboard from '../pages/dashboard';
 import UserProfile from '../pages/user/UserProfile';
 
-// Phase 2 Pages
+// Band Pages
 import CreateBand from '../pages/band/CreateBand';
 import JoinBand from '../pages/band/JoinBand';
 import BandDashboard from '../pages/band/BandDashboard';
 import BandMembers from '../pages/band/BandMembers';
 import EditBand from '../pages/band/EditBand';
-import BillingDashboard from '../pages/billing/BillingDashboard';
 
-// Phase 3 Pages (Songs)
+// Song Pages
 import SongList from '../pages/songs/SongList';
 import SongCreate from '../pages/songs/SongCreate';
-import SongEdit from '../pages/songs/SongEdit';
 import SongView from '../pages/songs/SongView';
+import SongEdit from '../pages/songs/SongEdit';
 
-// Phase 3 Pages (Playlists)
+// Playlist Pages
 import PlaylistList from '../pages/playlists/PlaylistList';
 import PlaylistCreate from '../pages/playlists/PlaylistCreate';
 import PlaylistDetail from '../pages/playlists/PlaylistDetail';
 import PlaylistEdit from '../pages/playlists/PlaylistEdit';
 
-// Phase 4 Pages (Regency)
+// Regency Pages
 import RegencyController from '../pages/regency/RegencyController';
 import RegencyViewer from '../pages/regency/RegencyViewer';
 
-// Phase 5 Pages (Billing - Mock)
-import MockCheckout from '../pages/billing/MockCheckout';
+// Billing Pages
+import BillingDashboard from '../pages/billing/BillingDashboard';
+
+// Admin Pages
+import AdminLayout from '../pages/admin/AdminLayout';
+import AdminDashboard from '../pages/admin/Dashboard';
+import AdminBandList from '../pages/admin/BandList';
+import AdminUserList from '../pages/admin/UserList';
+import AdminPaymentList from '../pages/admin/PaymentList';
+import AdminOperations from '../pages/admin/Operations';
+import AdminSupport from '../pages/admin/Support';
 
 // Animation variants for smoother transitions
 const pageVariants = {
@@ -83,16 +92,6 @@ const AppRoutes: React.FC = () => {
           }
         />
 
-        {/* Mock Checkout */}
-        <Route
-          path="/mock-checkout"
-          element={
-            <PageTransition>
-              <MockCheckout />
-            </PageTransition>
-          }
-        />
-
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
@@ -124,10 +123,20 @@ const AppRoutes: React.FC = () => {
           <Route path="/band/:bandId/regency" element={<PageTransition><RegencyController /></PageTransition>} />
           <Route path="/band/:bandId/regency/playlist/:playlistId" element={<PageTransition><RegencyController /></PageTransition>} />
           <Route path="/band/:bandId/regency/view" element={<PageTransition><RegencyViewer /></PageTransition>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="bands" element={<AdminBandList />} />
+            <Route path="users" element={<AdminUserList />} />
+            <Route path="payments" element={<AdminPaymentList />} />
+            <Route path="operations" element={<AdminOperations />} />
+            <Route path="support" element={<AdminSupport />} />
+          </Route>
         </Route>
 
-        {/* 404 Route */}
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
   );

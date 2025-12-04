@@ -36,36 +36,64 @@ export const createBand = async (name: string, city: string, themeColor?: string
   const bandRef = doc(collection(db, 'bands'));
   const bandId = bandRef.id;
   const code = generateBandCode();
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
 
-  // 1. Create Band Document
+  // Trial Logic: 30 days from now
+  const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).getTime();
+
+  // 1. Create Subscription Document
+  const subRef = doc(collection(db, 'subscriptions'));
+  const subId = subRef.id;
+
+  const subData: any = { // Using any to bypass strict type check during migration if needed, but matching Subscription interface
+    id: subId,
+    bandId: bandId,
+    ownerId: user.uid,
+    plan: 'levitahub-plus',
+    price: 49.90,
+    paymentMethod: 'manual',
+    status: 'trial',
+    createdAt: now.getTime(),
+    nextPaymentDate: trialEndsAt,
+    notes: 'Trial iniciado automaticamente na criação da banda.'
+  };
+  batch.set(subRef, subData);
+
+  // 2. Create Band Document
   const bandData: Band = {
     id: bandId,
     name,
     city,
     description: description || '',
-    style: '', // Deprecated but keeping empty string for schema consistency
+    style: '',
     code,
     ownerId: user.uid,
-    createdAt: now,
+    createdAt: nowIso,
     memberCount: 1,
     themeColor: themeColor || 'from-indigo-600 via-purple-600 to-pink-500',
-    logoSymbol: name.substring(0, 2).toUpperCase() // Default logo symbol
+    logoSymbol: name.substring(0, 2).toUpperCase(),
+
+    // Monetization Fields
+    subscriptionId: subId,
+    status: 'trial',
+    trialEndsAt: trialEndsAt,
+    subscriptionActiveUntil: trialEndsAt
   };
   batch.set(bandRef, bandData);
 
-  // 2. Add User as Leader in Band's subcollection
+  // 3. Add User as Leader in Band's subcollection
   const memberRef = doc(db, `bands/${bandId}/members`, user.uid);
   const memberData: BandMember = {
     userId: user.uid,
     name: user.displayName || "Unknown",
     email: user.email || "",
     role: 'leader',
-    joinedAt: now
+    joinedAt: nowIso
   };
   batch.set(memberRef, memberData);
 
-  // 3. Update User Profile (Create if doesn't exist, or update)
+  // 4. Update User Profile (Create if doesn't exist, or update)
   const userRef = doc(db, 'users', user.uid);
   batch.set(userRef, {
     uid: user.uid,
@@ -78,21 +106,6 @@ export const createBand = async (name: string, city: string, themeColor?: string
       }
     }
   }, { merge: true });
-
-  // 4. Initialize Billing Document
-  // Using 'subscription' as doc ID inside 'billing' subcollection matching services/billing.ts
-  const billingDocRef = doc(db, `bands/${bandId}/billing`, 'subscription');
-  const billingData: BandBilling = {
-    subscriptionStatus: 'inactive',
-    stripeCustomerId: null,
-    stripeSubscriptionId: null,
-    trialEndsAt: null,
-    currentPeriodEnd: null,
-    pastDueAt: null,
-    graceEndsAt: null,
-    updatedAt: now
-  };
-  batch.set(billingDocRef, billingData);
 
   await batch.commit();
   return bandId;

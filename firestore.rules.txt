@@ -12,6 +12,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Hardcoded Admin Check for MVP
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'kayky@gmail.com';
+    }
+
     // Verifica se o usuário tem um documento na subcoleção 'members' da banda
     function isMember(bandId) {
       return exists(/databases/$(database)/documents/bands/$(bandId)/members/$(request.auth.uid));
@@ -46,7 +52,8 @@ service cloud.firestore {
 
     // 1. USERS
     match /users/{userId} {
-      allow read, write: if isUser(userId);
+      allow read: if isUser(userId) || isAdmin();
+      allow write: if isUser(userId) || isAdmin();
     }
 
     // 2. BANDS
@@ -60,23 +67,20 @@ service cloud.firestore {
       // Update:
       // - Cenário A: Usuário entrando/saindo da banda (atualiza APENAS memberCount)
       // - Cenário B: Líder, Vice ou Regente editando dados da banda
+      // - Cenário C: Admin atualizando status da assinatura
       allow update: if (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])) 
-                    || canEditBand(bandId);
+                    || canEditBand(bandId)
+                    || isAdmin();
       
-      // Delete: Apenas o Líder
-      allow delete: if isLeader(bandId);
+      // Delete: Apenas o Líder ou Admin
+      allow delete: if isLeader(bandId) || isAdmin();
 
       // 2.1 MEMBERS (Subcoleção)
       match /members/{memberId} {
-        // Read: O próprio usuário (para verificar se já entrou) OU qualquer membro da banda
-        allow read: if isUser(memberId) || isMember(bandId);
-        
-        // Write: 
-        // - O próprio usuário entrando (criando seu doc)
-        // - Vice/Líder gerenciando membros
-        // - Importante: Validar que novos usuários entram apenas com role 'musico' para evitar escalação de privilégio
+        allow read: if isUser(memberId) || isMember(bandId) || isAdmin();
         allow write: if (isUser(memberId) && request.resource.data.role == 'musico') 
-                     || isVice(bandId);
+                     || isVice(bandId)
+                     || isAdmin();
       }
 
       // 2.2 SONGS (Subcoleção)
@@ -97,16 +101,33 @@ service cloud.firestore {
         allow write: if canEditMusic(bandId);
       }
 
-      // 2.5 BILLING (Subcoleção)
+      // 2.5 BILLING (Subcoleção - Deprecated but kept for legacy)
       match /billing/{document=**} {
-        allow read: if isMember(bandId);
-        allow write: if canEditBand(bandId) || isAuthenticated();
+        allow read: if isMember(bandId) || isAdmin();
+        allow write: if canEditBand(bandId) || isAuthenticated() || isAdmin();
       }
 
       match /billingLogs/{logId} {
-        allow read: if canEditBand(bandId);
-        allow write: if canEditBand(bandId);
+        allow read: if canEditBand(bandId) || isAdmin();
+        allow write: if canEditBand(bandId) || isAdmin();
       }
+    }
+
+    // 3. SUBSCRIPTIONS (New Collection)
+    match /subscriptions/{subId} {
+      // Read: Owner of the subscription (via ownerId field) or Admin
+      allow read: if (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      // Write: Only Admin (Manual process) or System (via Cloud Functions if implemented later)
+      // For now, create is allowed for authenticated users ONLY during band creation (handled by batch write in client code, but rules check individual ops)
+      // Actually, since we do client-side batch, the user needs create permission.
+      allow create: if isAuthenticated(); 
+      allow update: if isAdmin();
+    }
+
+    // 4. MANUAL PAYMENTS (New Collection)
+    match /manualPayments/{paymentId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
   }
 }

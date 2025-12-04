@@ -40,6 +40,12 @@ export interface Band {
   memberCount: number;
   themeColor?: string; // Visual Identity (Gradient classes)
   logoSymbol?: string; // New: Custom 1-2 char symbol for the logo
+
+  // Monetization Fields
+  subscriptionId?: string;
+  status?: 'active' | 'trial' | 'expired' | 'blocked';
+  trialEndsAt?: number;
+  subscriptionActiveUntil?: number;
 }
 
 export interface BandUpdateData {
@@ -57,6 +63,7 @@ export interface UserProfile {
   displayName: string;
   bio?: string; // New: Global Bio
   instruments?: string[]; // New: Global Instruments list
+  createdAt?: string;
   bands: {
     [bandId: string]: {
       role: UserRole;
@@ -135,27 +142,42 @@ export interface RegencySession {
 
 // --- PHASE 5 TYPES (BILLING & SUBSCRIPTION) ---
 
-export type SubscriptionStatus = 'inactive' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'blocked';
+export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'blocked' | 'pending';
 
+export interface Subscription {
+  id: string; // Document ID
+  bandId: string;
+  ownerId: string;
+  plan: 'levitahub-plus';
+  price: number;
+  paymentMethod: 'manual' | 'stripe';
+  status: SubscriptionStatus;
+  createdAt: number; // Timestamp
+  nextPaymentDate: number; // Timestamp
+  notes?: string;
+}
+
+export interface ManualPayment {
+  id: string;
+  userId: string;
+  bandId: string;
+  amount: number;
+  method: string; // 'pix', 'transfer', etc.
+  approvedBy: string;
+  approvedAt: number;
+  referenceMonth: string; // '2025-01'
+}
+
+// Deprecated but kept for compatibility until full migration
 export interface BandBilling {
   subscriptionStatus: SubscriptionStatus;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
-  trialEndsAt: number | null; // Timestamp in ms
-  currentPeriodEnd: number | null; // Timestamp in ms
-  pastDueAt: number | null; // Timestamp in ms
-  graceEndsAt: number | null; // Timestamp in ms
-  updatedAt: string; // ISO
-}
-
-// Webhook Event Types (Mock)
-export interface MockStripeEvent {
-  id: string;
-  type: 'checkout.session.completed' | 'invoice.paid' | 'invoice.payment_failed' | 'customer.subscription.updated' | 'customer.subscription.deleted';
-  data: {
-    object: any;
-  };
-  created: number;
+  trialEndsAt: number | null;
+  currentPeriodEnd: number | null;
+  pastDueAt: number | null;
+  graceEndsAt: number | null;
+  updatedAt: string;
 }
 
 export interface BillingLog {

@@ -4,7 +4,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getBandSongs, canEditMusic, deleteSong } from '../../services/songs';
 import { getBandMembers } from '../../services/bands';
-import { getBandBilling, canUseFeature, getFeatureTooltip } from '../../services/billing';
 import { Song, BandBilling } from '../../services/types';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
@@ -29,7 +28,7 @@ const SongList: React.FC = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [hasMore, setHasMore] = useState(false);
-  const [billing, setBilling] = useState<BandBilling | null>(null);
+  const [isSubscriptionActive, setIsSubscriptionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [canCreate, setCanCreate] = useState(false);
@@ -51,16 +50,20 @@ const SongList: React.FC = () => {
 
     const load = async () => {
       try {
-        const [songsData, membersData, billingData] = await Promise.all([
+        const [songsData, membersData, bandDetails] = await Promise.all([
           getBandSongs(bandId, null, 20),
           getBandMembers(bandId),
-          getBandBilling(bandId)
+          import('../../services/bands').then(mod => mod.getBandDetails(bandId))
         ]);
 
         setSongs(songsData.songs);
         setLastDoc(songsData.lastDoc);
         setHasMore(!!songsData.lastDoc);
-        setBilling(billingData);
+
+        // Billing Check
+        const { isSubscriptionActive: checkActive } = await import('../../services/billing');
+        const active = bandDetails ? checkActive(bandDetails) : false;
+        setIsSubscriptionActive(active);
 
         const me = membersData.find(m => m.userId === user.uid);
         if (me) {
@@ -151,8 +154,8 @@ const SongList: React.FC = () => {
     }
   };
 
-  const isAllowed = billing ? canUseFeature('create_song', billing.subscriptionStatus) : false;
-  const tooltip = billing ? getFeatureTooltip('create_song', billing.subscriptionStatus) : "Carregando...";
+  const isAllowed = isSubscriptionActive;
+  const tooltip = !isAllowed ? "Assinatura necessária para criar músicas." : "";
 
   // Sort Toggle Helper
   const toggleSort = (field: SortField) => {

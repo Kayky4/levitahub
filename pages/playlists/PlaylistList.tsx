@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getBandPlaylists, canManagePlaylists } from '../../services/playlists';
-import { getBandMembers } from '../../services/bands';
-import { getBandBilling, canUseFeature, getFeatureTooltip } from '../../services/billing';
-import { Playlist, BandBilling } from '../../services/types';
+import { getBandMembers, getBandDetails } from '../../services/bands';
+import { Playlist } from '../../services/types';
 import { useAuth } from '../../hooks/useAuth';
 import GlassCard from '../../components/ui/GlassCard';
 import Button from '../../components/ui/Button';
@@ -14,9 +13,9 @@ const PlaylistList: React.FC = () => {
   const { bandId } = useParams<{ bandId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [billing, setBilling] = useState<BandBilling | null>(null);
+  const [isSubscriptionActive, setIsSubscriptionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [canCreate, setCanCreate] = useState(false);
 
@@ -25,13 +24,17 @@ const PlaylistList: React.FC = () => {
 
     const load = async () => {
       try {
-        const [plData, membersData, billingData] = await Promise.all([
+        const [plData, membersData, bandData] = await Promise.all([
           getBandPlaylists(bandId),
           getBandMembers(bandId),
-          getBandBilling(bandId)
+          getBandDetails(bandId)
         ]);
         setPlaylists(plData);
-        setBilling(billingData);
+
+        // Billing Check
+        const { isSubscriptionActive: checkActive } = await import('../../services/billing');
+        const active = bandData ? checkActive(bandData) : false;
+        setIsSubscriptionActive(active);
 
         const me = membersData.find(m => m.userId === user.uid);
         if (me) setCanCreate(canManagePlaylists(me.role));
@@ -44,15 +47,15 @@ const PlaylistList: React.FC = () => {
     load();
   }, [bandId, user]);
 
-  const isAllowed = billing ? canUseFeature('create_playlist', billing.subscriptionStatus) : false;
-  const tooltip = billing ? getFeatureTooltip('create_playlist', billing.subscriptionStatus) : "";
+  const isAllowed = isSubscriptionActive;
+  const tooltip = !isAllowed ? "Assinatura necessária para criar playlists." : "";
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-midnight-900 p-8 transition-colors duration-300">
-         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16">
-            {[1,2,3].map(i => <Skeleton key={i} height="12rem" className="bg-gray-200 dark:bg-white/5" variant="rectangular" />)}
-         </div>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16">
+          {[1, 2, 3].map(i => <Skeleton key={i} height="12rem" className="bg-gray-200 dark:bg-white/5" variant="rectangular" />)}
+        </div>
       </div>
     );
   }
@@ -69,22 +72,22 @@ const PlaylistList: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Playlists e Eventos</h1>
             </div>
             {canCreate && (
-               <div className="relative group">
-                 <Button
-                   variant="primary"
-                   disabled={!isAllowed}
-                   onClick={() => navigate(`/band/${bandId}/playlists/create`)}
-                   className="bg-purple-600 hover:bg-purple-700 border-purple-500/50 shadow-purple-500/20 text-white"
-                   leftIcon={<span>+</span>}
-                 >
-                   Nova Playlist
-                 </Button>
-                 {!isAllowed && (
-                    <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-48 p-2 bg-black text-white text-xs rounded border border-white/10 z-30 shadow-xl">
-                      {tooltip}
-                    </div>
-                 )}
-               </div>
+              <div className="relative group">
+                <Button
+                  variant="primary"
+                  disabled={!isAllowed}
+                  onClick={() => navigate(`/band/${bandId}/playlists/create`)}
+                  className="bg-purple-600 hover:bg-purple-700 border-purple-500/50 shadow-purple-500/20 text-white"
+                  leftIcon={<span>+</span>}
+                >
+                  Nova Playlist
+                </Button>
+                {!isAllowed && (
+                  <div className="absolute top-full right-0 mt-2 hidden group-hover:block w-48 p-2 bg-black text-white text-xs rounded border border-white/10 z-30 shadow-xl">
+                    {tooltip}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -92,31 +95,31 @@ const PlaylistList: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {playlists.length === 0 ? (
-           <EmptyState 
-             title="Nenhuma Playlist"
-             description="Crie playlists para organizar seus cultos, ensaios e apresentações."
-             icon={<span className="text-3xl">📅</span>}
-             actionLabel={canCreate && isAllowed ? "Criar Playlist" : undefined}
-             onAction={() => navigate(`/band/${bandId}/playlists/create`)}
-           />
+          <EmptyState
+            title="Nenhuma Playlist"
+            description="Crie playlists para organizar seus cultos, ensaios e apresentações."
+            icon={<span className="text-3xl">📅</span>}
+            actionLabel={canCreate && isAllowed ? "Criar Playlist" : undefined}
+            onAction={() => navigate(`/band/${bandId}/playlists/create`)}
+          />
         ) : (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {playlists.map((pl) => (
-              <GlassCard 
-                key={pl.id} 
-                hoverable 
+              <GlassCard
+                key={pl.id}
+                hoverable
                 onClick={() => navigate(`/band/${bandId}/playlists/${pl.id}`)}
                 noPadding
                 className="flex flex-col group"
               >
                 <div className="p-6 flex-1">
                   <div className="flex justify-between items-start mb-4">
-                     <div className="bg-purple-100 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/30 rounded-lg px-3 py-1 text-xs font-mono font-bold text-purple-700 dark:text-purple-300">
-                        {new Date(pl.date).toLocaleDateString('pt-BR')}
-                     </div>
-                     <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
-                        {pl.songs.length} {pl.songs.length === 1 ? 'Música' : 'Músicas'}
-                     </div>
+                    <div className="bg-purple-100 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/30 rounded-lg px-3 py-1 text-xs font-mono font-bold text-purple-700 dark:text-purple-300">
+                      {new Date(pl.date).toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                      {pl.songs.length} {pl.songs.length === 1 ? 'Música' : 'Músicas'}
+                    </div>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">
                     {pl.title}

@@ -1,8 +1,8 @@
 // @ts-ignore
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   updateProfile,
   UserCredential
 } from 'firebase/auth';
@@ -12,7 +12,7 @@ import { UserProfile } from './types';
 
 export const registerUser = async (name: string, email: string, pass: string): Promise<UserCredential> => {
   const credential = await createUserWithEmailAndPassword(auth, email, pass);
-  
+
   if (auth.currentUser) {
     await updateProfile(auth.currentUser, {
       displayName: name
@@ -25,7 +25,8 @@ export const registerUser = async (name: string, email: string, pass: string): P
       uid: auth.currentUser.uid,
       email: email,
       displayName: name,
-      bands: {} // Empty bands map
+      bands: {}, // Empty bands map
+      createdAt: new Date().toISOString()
     };
     await setDoc(userRef, userData);
   }
