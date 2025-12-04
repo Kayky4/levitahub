@@ -1,9 +1,9 @@
-import { 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  onSnapshot, 
-  getDoc 
+import {
+  doc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  getDoc
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { RegencySession, UserRole } from './types';
@@ -18,42 +18,42 @@ export const canControlRegency = (role: UserRole): boolean => {
 // --- Actions ---
 
 export const startSession = async (
-  bandId: string, 
-  playlistId?: string, 
-  initialSongId?: string 
+  bandId: string,
+  playlistId?: string,
+  initialSongId?: string
 ): Promise<{ created: boolean; session: RegencySession }> => {
   const user = auth.currentUser;
   if (!user) throw new Error("Not authenticated");
 
   const sessionRef = doc(db, REGENCY_PATH(bandId));
   const now = new Date().toISOString();
-  
+
   const snap = await getDoc(sessionRef);
-  
+
   if (snap.exists()) {
     const data = snap.data() as RegencySession;
-    
+
     // Check if we should RESUME the existing session
     // Condition: Session is Active AND (No specific playlist requested OR requested playlist matches active)
     if (data.isActive) {
       const isSameContext = !playlistId || playlistId === data.playlistId;
-      
+
       if (isSameContext) {
         console.log("Regency: Resuming/Taking over existing session.");
-        
+
         // Update leader info and timestamp, but KEEP other state (song, scroll, etc.)
         const updates: Partial<RegencySession> = {
           leaderId: user.uid,
           leaderName: user.displayName || "Líder",
           updatedAt: now
         };
-        
+
         await updateDoc(sessionRef, updates);
-        
+
         // Return the CURRENT (merged) state so the UI can hydrate immediately
-        return { 
-          created: false, 
-          session: { ...data, ...updates } 
+        return {
+          created: false,
+          session: { ...data, ...updates }
         };
       }
     }
@@ -62,12 +62,12 @@ export const startSession = async (
   // Start FRESH session (Reset everything)
   const sessionData: RegencySession = {
     isActive: true,
-    currentSongId: initialSongId || null, 
+    currentSongId: initialSongId || null,
     currentSectionIndex: initialSongId ? 0 : null,
     transposeAmount: 0,
     scrollState: {
       isPlaying: false,
-      speed: 20, 
+      speed: 20,
     },
     cue: null,
     leaderId: user.uid,
@@ -141,6 +141,13 @@ export const setScrollSpeed = async (bandId: string, speed: number): Promise<voi
   });
 };
 
+export const syncScrollPosition = async (bandId: string, scrollTop: number): Promise<void> => {
+  const sessionRef = doc(db, REGENCY_PATH(bandId));
+  await updateDoc(sessionRef, {
+    'scrollState.scrollTop': scrollTop
+  });
+};
+
 export const sendCue = async (bandId: string, message: string, type: 'preset' | 'custom' = 'preset'): Promise<void> => {
   const sessionRef = doc(db, REGENCY_PATH(bandId));
   await updateDoc(sessionRef, {
@@ -158,7 +165,7 @@ export const sendCue = async (bandId: string, message: string, type: 'preset' | 
 
 export const subscribeToSession = (bandId: string, callback: (session: RegencySession | null) => void) => {
   const sessionRef = doc(db, REGENCY_PATH(bandId));
-  
+
   return onSnapshot(sessionRef, (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();

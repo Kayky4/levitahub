@@ -8,6 +8,10 @@ interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
+  type?: "button" | "submit" | "reset";
+  className?: string;
+  disabled?: boolean;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -20,7 +24,7 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  
+
   const variants = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)] border border-indigo-500/50",
     secondary: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-white/5 dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 backdrop-blur-sm",
@@ -31,7 +35,7 @@ const Button: React.FC<ButtonProps> = ({
 
   const sizes = {
     // Increased min-heights for better touch targets
-    sm: "px-4 py-2 text-xs rounded-lg min-h-[38px]", 
+    sm: "px-4 py-2 text-xs rounded-lg min-h-[38px]",
     md: "px-6 py-3 text-sm rounded-xl min-h-[48px]",
     lg: "px-8 py-4 text-base rounded-xl min-h-[56px]"
   };

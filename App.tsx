@@ -1,5 +1,4 @@
 import React from 'react';
-// @ts-ignore
 import { HashRouter } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { ToastProvider } from './context/ToastContext';

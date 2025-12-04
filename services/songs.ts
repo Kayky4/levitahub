@@ -1,40 +1,58 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  limit,
+  startAfter
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Song, SongSection, UserRole } from './types';
 
 const COLLECTION_NAME = 'songs';
 
-export const getBandSongs = async (bandId: string): Promise<Song[]> => {
-  const q = query(
+export const getBandSongs = async (
+  bandId: string,
+  lastDoc: any = null,
+  limitCount: number = 20
+): Promise<{ songs: Song[], lastDoc: any }> => {
+  let q = query(
     collection(db, `bands/${bandId}/${COLLECTION_NAME}`),
-    orderBy('title', 'asc')
+    orderBy('title', 'asc'),
+    limit(limitCount)
   );
+
+  if (lastDoc) {
+    // @ts-ignore - Firebase types can be tricky with startAfter
+    q = query(q, startAfter(lastDoc));
+  }
+
   const snapshot = await getDocs(q);
-  // Normalize listed songs too just in case, though usually only details need full sections
-  return snapshot.docs.map(doc => {
+
+  const songs = snapshot.docs.map(doc => {
     const s = { id: doc.id, ...doc.data() } as Song;
     if ((!s.sections || s.sections.length === 0) && s.content) {
-       s.sections = [{ id: 'legacy', index: 0, name: 'Geral', content: s.content }];
+      s.sections = [{ id: 'legacy', index: 0, name: 'Geral', content: s.content }];
     }
     return s;
   });
+
+  return {
+    songs,
+    lastDoc: snapshot.docs[snapshot.docs.length - 1] || null
+  };
 };
 
 export const getSong = async (bandId: string, songId: string): Promise<Song | null> => {
   const docRef = doc(db, `bands/${bandId}/${COLLECTION_NAME}`, songId);
   const snap = await getDoc(docRef);
-  
+
   if (!snap.exists()) return null;
 
   const song = { id: snap.id, ...snap.data() } as Song;
@@ -50,7 +68,7 @@ export const getSong = async (bandId: string, songId: string): Promise<Song | nu
       cues: ''
     }];
   }
-  
+
   // Ensure sections is at least an empty array to prevent crashes in maps
   if (!song.sections) {
     song.sections = [];
@@ -60,7 +78,7 @@ export const getSong = async (bandId: string, songId: string): Promise<Song | nu
 };
 
 export const createSong = async (
-  bandId: string, 
+  bandId: string,
   data: Omit<Song, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string> => {
   const docRef = await addDoc(collection(db, `bands/${bandId}/${COLLECTION_NAME}`), {
@@ -72,8 +90,8 @@ export const createSong = async (
 };
 
 export const updateSong = async (
-  bandId: string, 
-  songId: string, 
+  bandId: string,
+  songId: string,
   data: Partial<Omit<Song, 'id' | 'createdAt'>>
 ): Promise<void> => {
   const docRef = doc(db, `bands/${bandId}/${COLLECTION_NAME}`, songId);

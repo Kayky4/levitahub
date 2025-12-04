@@ -117,6 +117,7 @@ export interface ScrollState {
   isPlaying: boolean;
   speed: number; // 0 to 100 (percentage of max speed)
   targetY?: number; // Optional: For snap scrolling
+  scrollTop?: number; // For sync
 }
 
 export interface RegencySession {

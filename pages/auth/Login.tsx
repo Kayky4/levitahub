@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// @ts-ignore
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
@@ -12,7 +11,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -41,7 +40,7 @@ const Login: React.FC = () => {
       <GlassCard className="w-full max-w-md relative z-10 border-gray-200 dark:border-white/10 bg-white/80 dark:bg-midnight-800/50 shadow-2xl backdrop-blur-xl">
         <div className="text-center mb-8">
           <div className="mx-auto h-16 w-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(79,70,229,0.3)] mb-6 transform rotate-3 hover:rotate-0 transition-transform duration-500">
-             <span className="font-bold text-white text-3xl">L</span>
+            <span className="font-bold text-white text-3xl">L</span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Bem-vindo de volta</h2>
           <p className="mt-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">

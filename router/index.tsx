@@ -1,5 +1,4 @@
 import React from 'react';
-// @ts-ignore
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Login from '../pages/auth/Login';
@@ -71,33 +70,33 @@ const AppRoutes: React.FC = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             user ? <Navigate to="/dashboard" replace /> : <PageTransition><Login /></PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/signup" 
+        <Route
+          path="/signup"
           element={
             user ? <Navigate to="/dashboard" replace /> : <PageTransition><Signup /></PageTransition>
-          } 
+          }
         />
 
         {/* Mock Checkout */}
-        <Route 
-          path="/mock-checkout" 
+        <Route
+          path="/mock-checkout"
           element={
             <PageTransition>
               <MockCheckout />
             </PageTransition>
-          } 
+          }
         />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
-          
+
           {/* User Routes */}
           <Route path="/profile" element={<PageTransition><UserProfile /></PageTransition>} />
 
