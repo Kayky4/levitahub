@@ -1,17 +1,17 @@
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where, 
-  updateDoc, 
-  deleteDoc, 
-  deleteField, 
-  serverTimestamp, 
-  writeBatch, 
-  increment 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  deleteDoc,
+  deleteField,
+  serverTimestamp,
+  writeBatch,
+  increment
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { Band, BandMember, UserRole, UserProfile, BandUpdateData, BandBilling } from './types';
@@ -81,7 +81,7 @@ export const createBand = async (name: string, city: string, themeColor?: string
 
   // 4. Initialize Billing Document
   // Using 'subscription' as doc ID inside 'billing' subcollection matching services/billing.ts
-  const billingDocRef = doc(db, `bands/${bandId}/billing`, 'subscription'); 
+  const billingDocRef = doc(db, `bands/${bandId}/billing`, 'subscription');
   const billingData: BandBilling = {
     subscriptionStatus: 'inactive',
     stripeCustomerId: null,
@@ -161,7 +161,22 @@ export const joinBand = async (code: string, instrument?: string): Promise<strin
 
 export const updateBand = async (bandId: string, data: BandUpdateData) => {
   const bandRef = doc(db, 'bands', bandId);
-  await updateDoc(bandRef, { ...data });
+  const batch = writeBatch(db);
+
+  // 1. Update Band Doc
+  batch.update(bandRef, { ...data });
+
+  // 2. Update Current User's Profile (Denormalized Data)
+  // This ensures the user sees the new name immediately in their dashboard
+  const user = auth.currentUser;
+  if (user && data.name) {
+    const userRef = doc(db, 'users', user.uid);
+    batch.update(userRef, {
+      [`bands.${bandId}.name`]: data.name
+    });
+  }
+
+  await batch.commit();
 };
 
 export const deleteBand = async (bandId: string) => {
@@ -223,11 +238,9 @@ export const updateMemberRole = async (bandId: string, memberId: string, newRole
   const memberRef = doc(db, `bands/${bandId}/members`, memberId);
   batch.update(memberRef, { role: newRole });
 
-  // Update User Profile Denormalized Data
-  const userRef = doc(db, 'users', memberId);
-  batch.update(userRef, {
-    [`bands.${bandId}.role`]: newRole
-  });
+  // Note: We are NOT updating the denormalized data in 'users/{userId}' 
+  // because the Leader does not have permission to write to another user's profile.
+  // The Dashboard might show the old role, but the actual permissions (based on 'members') will be correct.
 
   await batch.commit();
 };
@@ -245,7 +258,7 @@ export const removeMember = async (bandId: string, memberId: string) => {
 
   // Remove from User Profile
   const userRef = doc(db, 'users', memberId);
-  
+
   batch.update(userRef, {
     [`bands.${bandId}`]: deleteField()
   });
@@ -262,7 +275,7 @@ export const canManageMembers = (currentUserRole: UserRole, targetMemberRole: Us
 };
 
 export const canEditBand = (currentUserRole: UserRole): boolean => {
-  return currentUserRole === 'leader' || currentUserRole === 'vice';
+  return currentUserRole === 'leader' || currentUserRole === 'vice' || currentUserRole === 'regente';
 };
 
 export const canDeleteBand = (currentUserRole: UserRole): boolean => {
