@@ -13,10 +13,10 @@ const Signup: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -79,8 +79,8 @@ const Signup: React.FC = () => {
 
       <GlassCard className="w-full max-w-md relative z-10 border-gray-200 dark:border-white/10 bg-white/80 dark:bg-midnight-800/50 shadow-2xl backdrop-blur-xl">
         <div className="text-center mb-8">
-           <div className="mx-auto h-14 w-14 bg-gradient-to-tr from-pink-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.3)] mb-4 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
-             <span className="font-bold text-white text-2xl">+</span>
+          <div className="mx-auto h-14 w-14 bg-gradient-to-tr from-pink-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.3)] mb-4 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+            <span className="font-bold text-white text-2xl">+</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Criar Nova Conta</h2>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

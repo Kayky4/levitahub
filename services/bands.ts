@@ -201,12 +201,8 @@ export const deleteBand = async (bandId: string) => {
   batch.delete(bandRef);
 
   // 2. Remove band reference from all members
-  members.forEach(member => {
-    const userRef = doc(db, 'users', member.userId);
-    batch.update(userRef, {
-      [`bands.${bandId}`]: deleteField()
-    });
-  });
+  // Note: We cannot update other users' profiles due to security rules.
+  // The 'ghost' band reference will be cleaned up by the UserContext self-healing mechanism when they try to access it.
 
   await batch.commit();
 };
@@ -270,11 +266,15 @@ export const removeMember = async (bandId: string, memberId: string) => {
   batch.update(bandRef, { memberCount: increment(-1) });
 
   // Remove from User Profile
-  const userRef = doc(db, 'users', memberId);
-
-  batch.update(userRef, {
-    [`bands.${bandId}`]: deleteField()
-  });
+  // If removing SELF, we can and should update our own profile immediately.
+  // If removing OTHERS, we cannot update their profile (security rules), so we rely on Self-Healing.
+  const currentUser = auth.currentUser;
+  if (currentUser && currentUser.uid === memberId) {
+    const userRef = doc(db, 'users', memberId);
+    batch.update(userRef, {
+      [`bands.${bandId}`]: deleteField()
+    });
+  }
 
   await batch.commit();
 };

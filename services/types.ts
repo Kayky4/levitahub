@@ -4,6 +4,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 
 export interface UserContextType {
   user: FirebaseUser | null;
+  userProfile: UserProfile | null; // New: Full Firestore Profile
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
@@ -61,6 +62,7 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
+  role?: 'admin' | 'user'; // New: System Role
   bio?: string; // New: Global Bio
   instruments?: string[]; // New: Global Instruments list
   createdAt?: string;

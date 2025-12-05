@@ -20,9 +20,12 @@ import { Band, Subscription, ManualPayment } from './types';
 // --- ADMIN HELPERS ---
 
 // Hardcoded Admin Check for MVP
-export const isAdmin = (email: string | null | undefined) => {
+// Admin Check: Role based or Fallback
+export const isAdmin = (user: any) => {
     const ADMIN_EMAILS = ['kayky@gmail.com'];
-    return email && ADMIN_EMAILS.includes(email);
+    if (user?.email && ADMIN_EMAILS.includes(user.email)) return true;
+    if (user?.role === 'admin') return true;
+    return false;
 };
 
 // --- DASHBOARD STATS ---
@@ -226,24 +229,17 @@ export const registerManualPayment = async (
 
 export const getOperationsStats = async () => {
     // Mocked for MVP as we don't have real-time presence yet
+    // Placeholder for MVP - Real implementation would query 'regency/session' across bands
     return {
-        activeRegencies: Math.floor(Math.random() * 5),
-        sessionsToday: Math.floor(Math.random() * 20) + 5,
-        musiciansOnline: Math.floor(Math.random() * 50) + 10,
-        recentLogs: [
-            { id: 1, action: 'Playlist Criada', band: 'Ministério Louvor', time: '2 min atrás' },
-            { id: 2, action: 'Música Editada', band: 'Banda Jovem', time: '5 min atrás' },
-            { id: 3, action: 'Novo Membro', band: 'Coral Principal', time: '12 min atrás' },
-            { id: 4, action: 'Regência Iniciada', band: 'Grupo de Louvor', time: '15 min atrás' },
-        ]
+        activeRegencies: 0,
+        sessionsToday: 0,
+        musiciansOnline: 0,
+        recentLogs: []
     };
 };
 
 export const getSupportTickets = async () => {
     // Mocked for MVP
-    return [
-        { id: 't1', user: 'joao@gmail.com', subject: 'Dúvida sobre pagamento', status: 'open', date: Date.now() - 10000000 },
-        { id: 't2', user: 'maria@hotmail.com', subject: 'Erro ao criar música', status: 'resolved', date: Date.now() - 50000000 },
-        { id: 't3', user: 'pedro@outlook.com', subject: 'Como convidar membros?', status: 'open', date: Date.now() - 2000000 },
-    ];
+    // Placeholder for MVP
+    return [];
 };

@@ -10,25 +10,21 @@ import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [myBands, setMyBands] = useState<UserProfile['bands']>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchBands = async () => {
-      try {
-        const bands = await getUserBands();
-        setMyBands(bands);
-      } catch (error) {
-        console.error("Error fetching bands", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) fetchBands();
-  }, [user]);
+    if (userProfile) {
+      setMyBands(userProfile.bands || {});
+      setLoading(false);
+    } else if (user) {
+      // If user exists but profile is null, we might be loading or profile creation failed.
+      // But UserContext handles loading state, so if we are here and loading is false (from context), it means empty profile.
+      // For now, let's just wait for profile.
+    }
+  }, [userProfile, user]);
 
   const bandList = Object.entries(myBands || {}).map(([id, data]) => {
     const bandData = data as { name: string; role: string };

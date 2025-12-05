@@ -28,6 +28,19 @@ const AppLayout: React.FC<Props> = ({ children }) => {
   const rawBandId = bandIdMatch ? bandIdMatch[1] : null;
   const currentBandId = (rawBandId === 'create' || rawBandId === 'join') ? null : rawBandId;
 
+  // --- REDIRECT IF REMOVED FROM BAND ---
+  // If we are in a band context, but the user profile says we are not a member, redirect to dashboard.
+  // This handles real-time removal (via onSnapshot in UserContext).
+  const { userProfile, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && userProfile && currentBandId) {
+      if (!userProfile.bands || !userProfile.bands[currentBandId]) {
+        navigate('/dashboard');
+      }
+    }
+  }, [loading, userProfile, currentBandId, navigate]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -138,7 +151,7 @@ const AppLayout: React.FC<Props> = ({ children }) => {
                         </div>
 
                         <div className="p-1">
-                          {user.email && isAdmin(user.email) && (
+                          {isAdmin(userProfile || user) && (
                             <Link
                               to="/admin"
                               className="block px-3 py-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors flex items-center gap-2 mb-1"

@@ -4,13 +4,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { isAdmin } from '../../services/admin';
 
 const AdminLayout: React.FC = () => {
-    const { user, loading } = useAuth();
+    const { user, userProfile, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     React.useEffect(() => {
         if (!loading) {
-            if (!user || !isAdmin(user.email)) {
+            if (!user || !isAdmin(userProfile || user)) {
                 navigate('/dashboard');
             }
         }

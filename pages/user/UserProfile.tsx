@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-// @ts-ignore
-import { updateProfile, updatePassword } from 'firebase/auth';
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, db } from '../../services/firebase';
@@ -90,6 +89,7 @@ const UserProfile: React.FC = () => {
   // Password State
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
 
   // UI State
   const [loading, setLoading] = useState(true);
@@ -189,17 +189,30 @@ const UserProfile: React.FC = () => {
       showToast('A senha deve ter no mínimo 6 caracteres.', 'error');
       return;
     }
+    if (!currentPassword) {
+      showToast('Digite sua senha atual.', 'error');
+      return;
+    }
 
     setSaving(true);
     try {
+      // Re-authenticate
+      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // Update Password
       await updatePassword(user, newPassword);
+
       setNewPassword('');
       setConfirmPassword('');
+      setCurrentPassword('');
       showToast('Senha alterada com sucesso!', 'success');
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'auth/requires-recent-login') {
-        showToast('Por segurança, faça login novamente antes de trocar a senha.', 'error');
+      if (error.code === 'auth/wrong-password') {
+        showToast('Senha atual incorreta.', 'error');
+      } else if (error.code === 'auth/requires-recent-login') {
+        showToast('Por favor, faça login novamente.', 'error');
       } else {
         showToast('Erro ao alterar senha. Tente novamente.', 'error');
       }
@@ -378,27 +391,36 @@ const UserProfile: React.FC = () => {
                     >
                       <div className="border-b border-gray-200 dark:border-white/5 pb-6">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Alterar Senha</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                           <Input
                             type="password"
-                            label="Nova Senha"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Min. 6 caracteres"
+                            label="Senha Atual"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Necessário para confirmar"
                           />
-                          <Input
-                            type="password"
-                            label="Confirmar Senha"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Repita a nova senha"
-                          />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input
+                              type="password"
+                              label="Nova Senha"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Min. 6 caracteres"
+                            />
+                            <Input
+                              type="password"
+                              label="Confirmar Senha"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              placeholder="Repita a nova senha"
+                            />
+                          </div>
                         </div>
                         <div className="mt-4 flex justify-end">
                           <Button
                             variant="secondary"
                             onClick={handleChangePassword}
-                            disabled={!newPassword || !confirmPassword || saving}
+                            disabled={!currentPassword || !newPassword || !confirmPassword || saving}
                             isLoading={saving}
                           >
                             Atualizar Senha
